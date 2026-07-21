@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, ObservableObject {
     private var settingsWindow: NSWindow?
     private var helpWindow: NSWindow?
     private var lastUnlockTime = Date.distantPast
+    private var idleTimer: Timer?
 #endif
 }
 
@@ -34,7 +35,7 @@ extension AppDelegate {
         showMainContent()
         NotificationCenter.default.post(name: .showAddGroup, object: nil)
     }
-    @objc func lockApp() { auth.lock(); showLockScreen() }
+    @objc func lockApp() { idleTimer?.invalidate(); idleTimer = nil; auth.lock(); showLockScreen() }
     func toggleFav(_ token: TokenItem) { store.toggleFav(token); store.save() }
     func deleteToken(_ token: TokenItem) { store.deleteToken(token) }
     func copyToken(_ token: TokenItem) {
@@ -68,8 +69,12 @@ extension AppDelegate: NSApplicationDelegate {
         showLockScreen()
 
         NotificationCenter.default.addObserver(
-            self, selector: #selector(autoLock),
+            self, selector: #selector(appDidResignActive),
             name: NSApplication.didResignActiveNotification, object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(appDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification, object: nil
         )
     }
 
@@ -156,7 +161,7 @@ extension AppDelegate: NSApplicationDelegate {
         if settingsWindow == nil {
             settingsWindow = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
             settingsWindow?.title = "設定"; settingsWindow?.styleMask = [.titled, .closable]
-            settingsWindow?.setContentSize(NSSize(width: 420, height: 360))
+            settingsWindow?.setContentSize(NSSize(width: 440, height: 400))
             settingsWindow?.isReleasedWhenClosed = false; settingsWindow?.center()
         }
         NSApp.activate(ignoringOtherApps: true); settingsWindow?.makeKeyAndOrderFront(nil)
@@ -166,7 +171,7 @@ extension AppDelegate: NSApplicationDelegate {
         if helpWindow == nil {
             helpWindow = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
             helpWindow?.title = "TokenVault 說明"; helpWindow?.styleMask = [.titled, .closable]
-            helpWindow?.setContentSize(NSSize(width: 480, height: 420))
+            helpWindow?.setContentSize(NSSize(width: 500, height: 460))
             helpWindow?.isReleasedWhenClosed = false; helpWindow?.center()
         }
         NSApp.activate(ignoringOtherApps: true); helpWindow?.makeKeyAndOrderFront(nil)
@@ -197,12 +202,23 @@ extension AppDelegate: NSApplicationDelegate {
         Task { await auth.authenticate() }
     }
 
-    @objc private func autoLock() {
+    @objc private func appDidResignActive() {
         guard settings.autoLockEnabled, lockWindow == nil else { return }
-        // Don't auto-lock within 3 seconds of unlocking (prevents launch re-lock)
-        guard Date().timeIntervalSince(lastUnlockTime) > 3 else { return }
+        idleTimer?.invalidate()
+        idleTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(settings.autoLockSeconds), repeats: false) { [weak self] _ in
+            self?.performLock()
+        }
+    }
+
+    @objc private func appDidBecomeActive() {
+        idleTimer?.invalidate()
+        idleTimer = nil
+    }
+
+    private func performLock() {
+        guard lockWindow == nil else { return }
         auth.lock()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             if self?.auth.isLocked == true { self?.showLockScreen() }
         }
     }

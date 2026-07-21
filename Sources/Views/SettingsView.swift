@@ -13,7 +13,7 @@ struct SettingsView: View {
             syncTab.tabItem { Label("同步", systemImage: "arrow.triangle.capsulepath") }
             securityTab.tabItem { Label("安全", systemImage: "lock.shield") }
         }
-        .frame(width: 420, height: 360)
+        .frame(minWidth: 420, minHeight: 380)
     }
 
     // MARK: - General

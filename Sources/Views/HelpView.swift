@@ -7,7 +7,7 @@ struct HelpView: View {
             guideTab.tabItem { Label("使用說明", systemImage: "book") }
             securityTab.tabItem { Label("安全性", systemImage: "lock.shield") }
         }
-        .frame(width: 480, height: 420)
+        .frame(minWidth: 480, minHeight: 440)
     }
 
     // MARK: - Shortcuts
