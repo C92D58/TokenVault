@@ -26,7 +26,7 @@ struct MainView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebarView
-                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+                .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
         } detail: {
             contentView
         }
@@ -199,7 +199,7 @@ struct MainView: View {
             }.buttonStyle(.plain)
         .focusEffectDisabled().help("設定").accessibilityLabel("設定")
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 8)
     }
 
     // MARK: - List

@@ -145,8 +145,8 @@ extension AppDelegate: NSApplicationDelegate {
         let hosting = NSHostingController(rootView: MainView(store: store))
         mainWindow = NSWindow(contentViewController: hosting)
         mainWindow?.title = "TokenVault"
-        mainWindow?.setContentSize(NSSize(width: 560, height: 680))
-        mainWindow?.minSize = NSSize(width: 400, height: 440)
+        mainWindow?.setContentSize(NSSize(width: 780, height: 640))
+        mainWindow?.minSize = NSSize(width: 600, height: 480)
         mainWindow?.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         mainWindow?.center(); mainWindow?.setFrameAutosaveName("TokenVaultMain")
         mainWindow?.titlebarAppearsTransparent = true; mainWindow?.isReleasedWhenClosed = false

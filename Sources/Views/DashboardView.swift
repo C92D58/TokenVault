@@ -35,10 +35,10 @@ struct DashboardBar: View {
             Divider().frame(height: 36)
             statCard(title: "最常用", value: stats.mostUsed?.name ?? "—", icon: "flame.fill", color: .orange, subtitle: stats.mostUsed.map { "\($0.copyCount) 次" })
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.06), lineWidth: 1))
-        .padding(.horizontal, 14).padding(.top, 8)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(.ultraThinMaterial))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.white.opacity(0.06), lineWidth: 1))
+        .padding(.horizontal, 14).padding(.top, 6)
     }
 
     private var healthIcon: String {
@@ -50,15 +50,15 @@ struct DashboardBar: View {
     }
 
     private func statCard(title: String, value: String, icon: String, color: Color, subtitle: String? = nil) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 13)).foregroundColor(color).frame(width: 20)
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.system(size: 11)).foregroundColor(color).frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
-                Text(value).font(.system(size: 13, weight: .bold)).foregroundColor(color).lineLimit(1).truncationMode(.tail)
-                if let sub = subtitle { Text(sub).font(.system(size: 9)).foregroundColor(.secondary) }
-                else { Text(title).font(.system(size: 9)).foregroundColor(.secondary) }
+                Text(value).font(.system(size: 12, weight: .bold)).foregroundColor(color).lineLimit(1).truncationMode(.tail)
+                if let sub = subtitle { Text(sub).font(.system(size: 8)).foregroundColor(.secondary) }
+                else { Text(title).font(.system(size: 8)).foregroundColor(.secondary) }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 6)
     }
 }
 
