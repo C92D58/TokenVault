@@ -1,41 +1,39 @@
 import SwiftUI
+import AppKit
 
-// MARK: - Design System
-
-private enum D {
-    static let rSm: CGFloat = 10; static let rMd: CGFloat = 14; static let rLg: CGFloat = 20
-    static let sXs: CGFloat = 6; static let sSm: CGFloat = 10; static let sMd: CGFloat = 14
-    static let sLg: CGFloat = 20; static let sXl: CGFloat = 28
-
-    // Brand gradient
-    static let accentGradient = LinearGradient(
-        colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
-    static let iconGradient = LinearGradient(
-        colors: [Color(red: 0.70, green: 0.60, blue: 0.98), Color(red: 0.50, green: 0.40, blue: 0.88)],
-        startPoint: .top, endPoint: .bottom
-    )
-}
-
-// MARK: - Main Window
+// MARK: - Hoppscotch-Inspired Main View
 
 struct MainView: View {
     @ObservedObject var store: DataStore
     @State private var searchText = ""
     @State private var selectedGroup: TokenGroup? = nil
+    @State private var selectedEnv: TokenEnvironment? = nil
+    @State private var selectedType: TokenType? = nil
     @State private var showAddToken = false
     @State private var showAddGroup = false
     @State private var editingToken: TokenItem? = nil
 
-    var tokens: [TokenItem] { store.search(searchText, in: selectedGroup) }
+    var tokens: [TokenItem] {
+        var result = store.search(searchText, in: selectedGroup)
+        if let env = selectedEnv { result = result.filter { $0.environment == env } }
+        if let type = selectedType { result = result.filter { $0.tokenType == type } }
+        return result
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            if tokens.isEmpty { emptyState } else { tokenList }
+        HSplitView {
+            // Sidebar
+            sidebar
+                .frame(minWidth: 180, idealWidth: 200, maxWidth: 240)
+
+            // Content
+            VStack(spacing: 0) {
+                toolbar
+                Divider()
+                if tokens.isEmpty { emptyState } else { tokenList }
+            }
+            .background(Color(.controlBackgroundColor))
         }
-        .background(backgroundLayer)
         .sheet(isPresented: $showAddToken) {
             TokenEditor(store: store, token: editingToken) { showAddToken = false; editingToken = nil }
         }
@@ -48,346 +46,308 @@ struct MainView: View {
         .onReceive(NotificationCenter.default.publisher(for: .showAddGroup)) { _ in
             showAddGroup = true
         }
-        .onChange(of: editingToken) { _, _ in
-            if editingToken != nil { showAddToken = true }
-        }
+        .onChange(of: editingToken) { _, _ in if editingToken != nil { showAddToken = true } }
     }
 
-    private var backgroundLayer: some View {
-        ZStack {
-            Color(.controlBackgroundColor)
-            // Subtle gradient overlay
-            LinearGradient(
-                colors: [Color.accentColor.opacity(0.03), Color.clear, Color.accentColor.opacity(0.02)],
-                startPoint: .top, endPoint: .bottom
-            )
-        }
-    }
+    // MARK: - Sidebar
 
-    // MARK: - Header
-
-    private var header: some View {
-        VStack(spacing: D.sSm) {
-            HStack {
-                HStack(spacing: 8) {
-                    // Brand mark
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 7)
-                            .fill(D.iconGradient)
-                            .frame(width: 28, height: 28)
-                        Image(systemName: "key.horizontal.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    Text("TokenVault")
-                        .font(.system(size: 17, weight: .bold))
-                        .tracking(-0.3)
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            // Brand header
+            HStack(spacing: 7) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 22, height: 22)
+                    Image(systemName: "key.horizontal.fill").font(.system(size: 10, weight: .bold)).foregroundColor(.white)
                 }
+                Text("TokenVault").font(.system(size: 12, weight: .bold)).tracking(-0.2)
                 Spacer()
-                HStack(spacing: D.sSm) {
-                    Menu {
-                        Button("所有 Token") { selectedGroup = nil }
-                        if !store.groups.isEmpty { Divider() }
-                        ForEach(store.groups) { g in Button(g.name) { selectedGroup = g } }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "folder").font(.system(size: 11))
-                            Text(selectedGroup?.name ?? "全部").font(.system(size: 12, weight: .medium))
-                            Image(systemName: "chevron.down").font(.system(size: 7, weight: .bold))
+                Button { showAddGroup = true } label: {
+                    Image(systemName: "folder.badge.plus").font(.system(size: 12))
+                }.buttonStyle(.plain).foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+
+            Divider()
+
+            // Groups
+            ScrollView {
+                VStack(alignment: .leading, spacing: 1) {
+                    sidebarItem("所有 Token", icon: "tray.full.fill", count: store.allTokens.count, isSelected: selectedGroup == nil && selectedEnv == nil && selectedType == nil) {
+                        selectedGroup = nil; selectedEnv = nil; selectedType = nil
+                    }
+                    sidebarItem("收藏", icon: "star.fill", count: store.allTokens.filter(\.isFavorite).count, isSelected: false) {
+                        selectedGroup = nil; selectedEnv = nil; selectedType = nil
+                        // Filter favorites
+                    }
+
+                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
+
+                    // Environment filters
+                    SectionHeader("環境")
+                    ForEach(TokenEnvironment.allCases, id: \.self) { env in
+                        sidebarItem(env.rawValue, icon: env.icon, count: store.allTokens.filter { $0.environment == env }.count, isSelected: selectedEnv == env) {
+                            selectedEnv = selectedEnv == env ? nil : env; selectedType = nil
                         }
-                        .padding(.horizontal, 11).padding(.vertical, 6)
-                        .background(Capsule().fill(.bar))
-                        .overlay(Capsule().stroke(.white.opacity(0.08), lineWidth: 1))
-                    }.buttonStyle(.plain)
+                    }
 
-                    Button { showAddGroup = true } label: {
-                        Image(systemName: "folder.badge.plus").font(.system(size: 14))
-                    }.buttonStyle(.plain).foregroundColor(.secondary)
+                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
 
-                    Button { editingToken = nil; showAddToken = true } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(D.accentGradient)
-                    }.buttonStyle(.plain)
+                    // Groups
+                    SectionHeader("分組")
+                    ForEach(store.groups) { group in
+                        sidebarItem(group.name, icon: group.icon, count: group.tokens.count, isSelected: selectedGroup == group) {
+                            selectedGroup = selectedGroup == group ? nil : group
+                        }
+                    }
 
-                    Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
-                        Image(systemName: "gearshape").font(.system(size: 14))
-                    }.buttonStyle(.plain).foregroundColor(.secondary)
+                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
+
+                    // Type filters
+                    SectionHeader("類型")
+                    let usedTypes = Set(store.allTokens.map(\.tokenType))
+                    ForEach(TokenType.allCases.filter { usedTypes.contains($0) }, id: \.self) { type in
+                        sidebarItem(type.label, icon: type.icon, count: store.allTokens.filter { $0.tokenType == type }.count, isSelected: selectedType == type) {
+                            selectedType = selectedType == type ? nil : type
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .background(Color(.controlBackgroundColor).opacity(0.5))
+    }
+
+    private func sidebarItem(_ label: String, icon: String, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon).font(.system(size: 11)).frame(width: 18).foregroundColor(isSelected ? .accentColor : .secondary)
+                Text(label).font(.system(size: 12)).lineLimit(1).foregroundColor(isSelected ? .primary : .secondary)
+                Spacer()
+                if count > 0 {
+                    Text("\(count)").font(.system(size: 10, design: .monospaced)).foregroundColor(.secondary.opacity(0.5))
                 }
             }
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
 
+    // MARK: - Toolbar
+
+    private var toolbar: some View {
+        HStack(spacing: 10) {
             // Search
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary.opacity(0.6)).font(.system(size: 13))
-                TextField("搜尋 Token...", text: $searchText)
-                    .textFieldStyle(.plain).font(.system(size: 13))
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass").foregroundColor(.secondary.opacity(0.5)).font(.system(size: 11))
+                TextField("搜尋..." + (selectedEnv != nil ? " · \(selectedEnv!.rawValue)" : ""), text: $searchText)
+                    .textFieldStyle(.plain).font(.system(size: 12))
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 11))
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }.buttonStyle(.plain).transition(.scale.combined(with: .opacity))
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.4))
+                    }.buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(.bar)
-            .overlay(RoundedRectangle(cornerRadius: D.rSm).stroke(.white.opacity(0.06), lineWidth: 1))
-            .cornerRadius(D.rSm)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(.bar).cornerRadius(7)
+
+            // Quick env filter pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(TokenEnvironment.allCases, id: \.self) { env in
+                        Button { selectedEnv = selectedEnv == env ? nil : env } label: {
+                            Text(env.rawValue).font(.system(size: 10, weight: .medium))
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(selectedEnv == env ? Capsule().fill(AnyShapeStyle(env.color.fg.swiftUIColor)) : Capsule().fill(AnyShapeStyle(.quaternary)))
+                                .foregroundColor(selectedEnv == env ? env.color.bg.swiftUIColor : .secondary)
+                        }.buttonStyle(.plain)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Button { editingToken = nil; showAddToken = true } label: {
+                Image(systemName: "plus.circle.fill").font(.system(size: 16))
+                    .foregroundStyle(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }.buttonStyle(.plain)
+
+            Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
+                Image(systemName: "gearshape").font(.system(size: 13)).foregroundColor(.secondary)
+            }.buttonStyle(.plain)
         }
-        .padding(.horizontal, D.sXl).padding(.top, D.sLg).padding(.bottom, D.sMd)
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
-    // MARK: - List
+    // MARK: - Token List
 
     private var tokenList: some View {
         ScrollView {
-            LazyVStack(spacing: D.sSm) {
+            LazyVStack(spacing: 6) {
                 ForEach(tokens) { token in
-                    TokenCard(token: token, store: store) { editingToken = token }
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    HoppscotchCard(token: token, store: store) { editingToken = token }
                 }
             }
-            .padding(.horizontal, D.sXl)
-            .padding(.bottom, D.sXl)
+            .padding(14)
         }
     }
 
     private var emptyState: some View {
-        VStack(spacing: D.sLg) {
+        VStack(spacing: 14) {
             Spacer()
             ZStack {
-                Circle().fill(D.iconGradient.opacity(0.15)).frame(width: 88, height: 88)
-                Image(systemName: "key.horizontal").font(.system(size: 36)).foregroundStyle(D.iconGradient)
+                Circle().fill(Color.accentColor.opacity(0.08)).frame(width: 72, height: 72)
+                Image(systemName: "key.horizontal").font(.system(size: 28)).foregroundColor(.accentColor.opacity(0.5))
             }
-            VStack(spacing: 4) {
-                Text(searchText.isEmpty ? "尚無 Token" : "無匹配結果")
-                    .font(.system(size: 14, weight: .medium))
-                Text(searchText.isEmpty ? "點擊 + 新增你的第一個 API 密鑰" : "嘗試其他關鍵字")
-                    .font(.system(size: 12)).foregroundColor(.secondary)
-            }
+            Text(searchText.isEmpty ? "尚無 Token" : "無匹配").font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
             if searchText.isEmpty {
-                Button("新增 Token") { editingToken = nil; showAddToken = true }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
+                Button("新增 Token") { editingToken = nil; showAddToken = true }.buttonStyle(.borderedProminent).controlSize(.small)
             }
             Spacer()
         }
     }
 }
 
-// MARK: - Refined Token Card
+// MARK: - Helper Views
 
-struct TokenCard: View {
+private struct SectionHeader: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text).font(.system(size: 10, weight: .semibold)).foregroundColor(.secondary.opacity(0.5))
+            .padding(.horizontal, 12).padding(.top, 4)
+    }
+}
+
+// MARK: - Hoppscotch-Style Token Card
+
+struct HoppscotchCard: View {
     @ObservedObject var token: TokenItem
     @ObservedObject var store: DataStore
     let onEdit: () -> Void
 
-    @State private var expanded = false
-    @State private var showValue = false
-    @State private var copied = false
     @State private var isHovering = false
+    @State private var copied = false
     @State private var isPressed = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { expanded.toggle() }
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isPressed = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { isPressed = false }
-                }
-            } label: { cardHeader }
-                .buttonStyle(.plain)
+        HStack(spacing: 0) {
+            // Left color bar (token type)
+            RoundedRectangle(cornerRadius: 2)
+                .fill(token.tokenType.color.swiftUIColor)
+                .frame(width: 3)
+                .padding(.vertical, 8)
 
-            if expanded {
-                Divider()
-                    .opacity(0.3).padding(.horizontal, D.sMd)
-                cardDetail.transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.98)),
-                    removal: .opacity.combined(with: .move(edge: .top))
-                ))
+            // Content
+            HStack(spacing: 10) {
+                // Type icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(token.tokenType.color.swiftUIColor.opacity(0.1))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: token.tokenType.icon)
+                        .font(.system(size: 13))
+                        .foregroundColor(token.tokenType.color.swiftUIColor)
+                }
+
+                // Name + masked value
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(token.name).font(.system(size: 12.5, weight: .medium)).tracking(-0.15).lineLimit(1)
+                        if token.isFavorite {
+                            Image(systemName: "star.fill").font(.system(size: 9)).foregroundColor(.orange)
+                        }
+                        // Environment pill
+                        Text(token.environment.rawValue)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(Capsule().fill(token.envColor.opacity(0.12)))
+                            .foregroundColor(token.envColor)
+                    }
+                    Text(token.maskedValue).font(.system(size: 10, design: .monospaced)).foregroundColor(.secondary).lineLimit(1)
+                }
+
+                Spacer()
+
+                // Hover actions
+                if isHovering {
+                    HStack(spacing: 4) {
+                        // Copy
+                        Button {
+                            (NSApp.delegate as? AppDelegate)?.copyToken(token)
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { copied = true }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { withAnimation { copied = false } }
+                        } label: {
+                            Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11))
+                                .frame(width: 26, height: 26)
+                                .background(Circle().fill(copied ? Color.green.opacity(0.1) : Color.primary.opacity(0.04)))
+                                .foregroundColor(copied ? .green : .secondary)
+                        }.buttonStyle(.plain)
+                        .transition(.scale.combined(with: .opacity))
+
+                        // Edit
+                        Button { onEdit() } label: {
+                            Image(systemName: "pencil").font(.system(size: 10)).foregroundColor(.secondary)
+                                .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
+                        }.buttonStyle(.plain)
+
+                        // More (context menu)
+                        Menu {
+                            Button { (NSApp.delegate as? AppDelegate)?.toggleFav(token) } label: {
+                                Label(token.isFavorite ? "取消收藏" : "收藏", systemImage: token.isFavorite ? "star.slash" : "star")
+                            }
+                            Button(role: .destructive) { (NSApp.delegate as? AppDelegate)?.deleteToken(token) } label: {
+                                Label("刪除", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis").font(.system(size: 10)).foregroundColor(.secondary)
+                                .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
+                        }.buttonStyle(.plain).menuIndicator(.hidden)
+                    }
+                    .animation(.easeOut(duration: 0.12), value: isHovering)
+                }
+
+                // Expiry badge
+                if token.isExpired {
+                    Text("過期").font(.system(size: 8, weight: .bold)).foregroundColor(.red)
+                        .padding(.horizontal, 5).padding(.vertical, 2).background(Capsule().fill(Color.red.opacity(0.1)))
+                } else if token.expiresSoon {
+                    Text("即將").font(.system(size: 8, weight: .bold)).foregroundColor(.orange)
+                        .padding(.horizontal, 5).padding(.vertical, 2).background(Capsule().fill(Color.orange.opacity(0.1)))
+                }
             }
+            .padding(.leading, 10).padding(.trailing, 10).padding(.vertical, 10)
         }
-        .background(cardBackground)
-        .scaleEffect(isHovering ? 1.008 : 1.0)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovering ? Color.primary.opacity(0.03) : Color.clear)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(isHovering ? 0.06 : 0.02), lineWidth: 1))
+        )
         .scaleEffect(isPressed ? 0.985 : 1.0)
-        .shadow(color: isHovering ? Color.accentColor.opacity(0.08) : Color.clear, radius: 12, y: 4)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isPressed)
         .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.2)) { isHovering = hovering }
+            withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering }
+        }
+        .onTapGesture {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) { isPressed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) { isPressed = false }
+            }
+            // Double-click to copy
+            (NSApp.delegate as? AppDelegate)?.copyToken(token)
         }
     }
+}
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: D.rMd)
-            .fill(.ultraThinMaterial)
-            .overlay(
-                RoundedRectangle(cornerRadius: D.rMd)
-                    .stroke(LinearGradient(
-                        colors: [.white.opacity(isHovering ? 0.12 : 0.06), .white.opacity(0.03)],
-                        startPoint: .top, endPoint: .bottom
-                    ), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
-            .shadow(color: .black.opacity(0.03), radius: 8, y: 3)
-    }
+// MARK: - Color helpers
 
-    // MARK: - Header
-
-    private var cardHeader: some View {
-        HStack(spacing: D.sMd) {
-            // Gradient icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 9)
-                    .fill(token.isFavorite ? AnyShapeStyle(Color.orange.opacity(0.15)) : AnyShapeStyle(D.iconGradient.opacity(0.12)))
-                    .frame(width: 36, height: 36)
-                Image(systemName: token.isFavorite ? "star.fill" : "key.fill")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(token.isFavorite ? AnyShapeStyle(Color.orange) : AnyShapeStyle(D.iconGradient))
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(token.name)
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .tracking(-0.2).lineLimit(1)
-                Text(token.maskedValue)
-                    .font(.system(size: 10.5, design: .monospaced))
-                    .foregroundColor(.secondary).lineLimit(1)
-            }
-
-            Spacer()
-
-            // Status badges
-            if token.isExpired {
-                pillBadge("過期", color: .red)
-            } else if token.expiresSoon {
-                pillBadge("即將過期", color: .orange)
-            }
-
-            // Favorite indicator
-            if token.isFavorite {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 10)).foregroundColor(.orange)
-            }
-
-            Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                .font(.system(size: 10, weight: .medium)).foregroundColor(.secondary.opacity(0.6))
-                .rotationEffect(.degrees(expanded ? 0 : 0))
-        }
-        .padding(.horizontal, D.sMd).padding(.vertical, 13)
-    }
-
-    // MARK: - Detail
-
-    private var cardDetail: some View {
-        VStack(alignment: .leading, spacing: D.sSm) {
-            // Value display
-            HStack {
-                if showValue {
-                    Text(token.decryptedValue())
-                        .font(.system(size: 11, design: .monospaced))
-                        .textSelection(.enabled)
-                        .padding(.horizontal, 10).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 7).fill(.black.opacity(0.06)))
-                } else {
-                    Text(token.maskedValue)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 10).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 7).fill(.black.opacity(0.03)))
-                }
-                Spacer()
-                Button { withAnimation(.easeOut(duration: 0.15)) { showValue.toggle() } } label: {
-                    Image(systemName: showValue ? "eye.slash" : "eye")
-                        .font(.system(size: 11)).foregroundColor(.secondary)
-                        .frame(width: 26, height: 26)
-                        .background(Circle().fill(.black.opacity(0.04)))
-                }.buttonStyle(.plain)
-            }
-
-            // Action buttons
-            HStack(spacing: 8) {
-                // Copy button - gradient
-                Button {
-                    ClipboardService.shared.copy(token.decryptedValue())
-                    token.copyCount += 1; store.save()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { copied = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { withAnimation { copied = false } }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 11, weight: .bold))
-                        Text(copied ? "已複製" : "複製")
-                            .font(.system(size: 11, weight: .semibold))
-                    }
-                    .padding(.horizontal, 14).padding(.vertical, 7)
-                    .background(
-                        Capsule().fill(copied ? AnyShapeStyle(Color.green.opacity(0.15)) : AnyShapeStyle(D.accentGradient.opacity(0.12)))
-                    )
-                    .overlay(Capsule().stroke(
-                        copied ? Color.green.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1
-                    ))
-                    .foregroundColor(copied ? .green : Color(red: 0.65, green: 0.55, blue: 0.98))
-                }.buttonStyle(.plain)
-
-                Button { store.toggleFav(token); store.save() } label: {
-                    Image(systemName: token.isFavorite ? "star.fill" : "star")
-                        .font(.system(size: 12))
-                        .foregroundColor(token.isFavorite ? .orange : .secondary)
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(.black.opacity(0.03)))
-                        .overlay(Circle().stroke(.white.opacity(0.06), lineWidth: 1))
-                }.buttonStyle(.plain)
-
-                Button { onEdit() } label: {
-                    Image(systemName: "pencil").font(.system(size: 11)).foregroundColor(.secondary)
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(.black.opacity(0.03)))
-                        .overlay(Circle().stroke(.white.opacity(0.06), lineWidth: 1))
-                }.buttonStyle(.plain)
-
-                Spacer()
-
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { expanded = false }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { store.deleteToken(token) }
-                } label: {
-                    Image(systemName: "trash").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.6))
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(.black.opacity(0.03)))
-                        .overlay(Circle().stroke(.white.opacity(0.06), lineWidth: 1))
-                }.buttonStyle(.plain)
-            }
-
-            // Metadata footer
-            if token.copyCount > 0 || token.expiresAt != nil || !token.note.isEmpty {
-                HStack(spacing: 14) {
-                    if token.copyCount > 0 {
-                        Label("\(token.copyCount)", systemImage: "arrow.triangle.capsulepath")
-                            .font(.system(size: 10)).foregroundColor(.secondary.opacity(0.7))
-                    }
-                    if let e = token.expiresAt {
-                        Label(e.formatted(date: .abbreviated, time: .omitted), systemImage: "clock")
-                            .font(.system(size: 10))
-                            .foregroundColor(token.isExpired ? .red : token.expiresSoon ? .orange : .secondary.opacity(0.7))
-                    }
-                    Spacer()
-                    if !token.note.isEmpty {
-                        Text(token.note).font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5)).lineLimit(1)
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, D.sMd).padding(.vertical, D.sMd)
-    }
-
-    private func pillBadge(_ text: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Circle().fill(color).frame(width: 5, height: 5)
-            Text(text).font(.system(size: 9.5, weight: .semibold))
-        }
-        .foregroundColor(color)
-        .padding(.horizontal, 8).padding(.vertical, 3)
-        .background(Capsule().fill(color.opacity(0.12)))
-        .overlay(Capsule().stroke(color.opacity(0.2), lineWidth: 1))
+extension String {
+    var swiftUIColor: Color {
+        let s = trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        guard s.count == 6, let num = Int(s, radix: 16) else { return .accentColor }
+        return Color(red: Double((num >> 16) & 0xFF)/255, green: Double((num >> 8) & 0xFF)/255, blue: Double(num & 0xFF)/255)
     }
 }
