@@ -16,133 +16,136 @@ struct TokenEditor: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
-                Text(token != nil ? "編輯 Token" : "新增 Token").font(.system(size: 15, weight: .bold))
+                Text(token != nil ? "編輯 Token" : "新增 Token")
+                    .font(.system(size: 14, weight: .bold))
                 Spacer()
-                Button("取消") { onDismiss() }.keyboardShortcut(.cancelAction)
-            }.padding()
+                Button("取消") { onDismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+            .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 12)
 
             Divider()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    nameField
+            // All fields — no scroll
+            VStack(alignment: .leading, spacing: 10) {
+                // Name
+                fieldLabel("名稱", icon: "tag")
+                TextField("例如：GitHub Personal Token", text: $name)
+                    .textFieldStyle(.plain)
+                    .padding(7)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
 
-                    // Environment + Type row
-                    HStack(spacing: 10) {
-                        envPicker
-                        typePicker
+                // Environment + Type side by side
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        fieldLabel("環境", icon: "square.3.layers.3d")
+                        Picker("", selection: $environment) {
+                            ForEach(TokenEnvironment.allCases, id: \.self) { env in
+                                HStack(spacing: 4) {
+                                    Circle().fill(env.color.bg.swiftUIColor).frame(width: 8, height: 8)
+                                    Text(env.rawValue)
+                                }.tag(env)
+                            }
+                        }
+                        .pickerStyle(.menu).labelsHidden()
+                        .frame(maxWidth: .infinity)
+                        .padding(7)
+                        .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
                     }
 
-                    valueField
-                    noteField
+                    VStack(alignment: .leading, spacing: 4) {
+                        fieldLabel("類型", icon: "square.grid.2x2")
+                        Picker("", selection: $tokenType) {
+                            ForEach(TokenType.allCases, id: \.self) { type in
+                                HStack(spacing: 4) {
+                                    Image(systemName: type.icon).font(.system(size: 10))
+                                    Text(type.label)
+                                }.tag(type)
+                            }
+                        }
+                        .pickerStyle(.menu).labelsHidden()
+                        .frame(maxWidth: .infinity)
+                        .padding(7)
+                        .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
+                    }
+                }
+
+                // Token value
+                fieldLabel("Token 值", icon: "key")
+                SecureField("貼上 Token 值", text: $value)
+                    .textFieldStyle(.plain)
+                    .padding(7)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
+
+                // Note + Group side by side
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        fieldLabel("備註", icon: "note.text")
+                        TextField("可選", text: $note)
+                            .textFieldStyle(.plain)
+                            .padding(7)
+                            .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
+                    }
 
                     if !store.groups.isEmpty {
-                        groupPicker
+                        VStack(alignment: .leading, spacing: 4) {
+                            fieldLabel("分組", icon: "folder")
+                            Picker("", selection: $selectedGroup) {
+                                Text("無").tag(nil as TokenGroup?)
+                                ForEach(store.groups) { Text($0.name).tag($0 as TokenGroup?) }
+                            }
+                            .pickerStyle(.menu).labelsHidden()
+                            .padding(7)
+                            .background(RoundedRectangle(cornerRadius: 7).fill(.quaternary))
+                        }
                     }
+                }
 
-                    expiryToggle
-                }.padding()
+                // Expiry
+                HStack {
+                    Toggle(isOn: $hasExpiry) {
+                        Label("到期日", systemImage: "clock")
+                            .font(.system(size: 12))
+                    }
+                    if hasExpiry {
+                        DatePicker("", selection: $expiryDate, displayedComponents: .date)
+                            .datePickerStyle(.field)
+                            .labelsHidden()
+                            .frame(width: 130)
+                    }
+                    Spacer()
+                }
             }
+            .padding(.horizontal, 20).padding(.vertical, 14)
 
             Divider()
+
+            // Footer
             HStack {
                 Spacer()
-                Button("儲存") { save() }.buttonStyle(.borderedProminent).keyboardShortcut(.return)
+                Button("儲存") { save() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.return)
                     .disabled(name.isEmpty || value.isEmpty)
-            }.padding()
+            }
+            .padding(.horizontal, 20).padding(.vertical, 12)
         }
-        .frame(width: 440, height: 400)
+        .frame(width: 460, height: 370)
         .onAppear { load() }
     }
 
-    // MARK: - Fields
-
-    private var nameField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("名稱", systemImage: "tag").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            TextField("例如：GitHub Personal Token", text: $name).textFieldStyle(.plain)
-                .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var envPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("環境", systemImage: "square.3.layers.3d").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            Picker("", selection: $environment) {
-                ForEach(TokenEnvironment.allCases, id: \.self) { env in
-                    HStack(spacing: 4) {
-                        Circle().fill(env.color.bg.swiftUIColor).frame(width: 8, height: 8)
-                        Text(env.rawValue)
-                    }.tag(env)
-                }
-            }
-            .pickerStyle(.menu).labelsHidden()
-            .frame(maxWidth: .infinity)
-            .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var typePicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("類型", systemImage: "square.grid.2x2").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            Picker("", selection: $tokenType) {
-                ForEach(TokenType.allCases, id: \.self) { type in
-                    HStack(spacing: 4) {
-                        Image(systemName: type.icon).font(.system(size: 10))
-                        Text(type.label)
-                    }.tag(type)
-                }
-            }
-            .pickerStyle(.menu).labelsHidden()
-            .frame(maxWidth: .infinity)
-            .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var valueField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Token 值", systemImage: "key").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            SecureField("貼上 Token 值", text: $value).textFieldStyle(.plain)
-                .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var noteField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("備註", systemImage: "note.text").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            TextField("可選", text: $note).textFieldStyle(.plain)
-                .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var groupPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("分組", systemImage: "folder").font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)
-            Picker("", selection: $selectedGroup) {
-                Text("無分組").tag(nil as TokenGroup?)
-                ForEach(store.groups) { Text($0.name).tag($0 as TokenGroup?) }
-            }.pickerStyle(.menu).labelsHidden()
-                .padding(9).background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
-        }
-    }
-
-    private var expiryToggle: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Toggle(isOn: $hasExpiry) {
-                Label("到期日", systemImage: "clock").font(.system(size: 13))
-            }
-            if hasExpiry {
-                DatePicker("", selection: $expiryDate, displayedComponents: .date).datePickerStyle(.field).labelsHidden()
-            }
-        }
+    private func fieldLabel(_ text: String, icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .font(.system(size: 10.5, weight: .semibold))
+            .foregroundColor(.secondary)
     }
 
     // MARK: - Load / Save
 
     private func load() {
         guard let t = token else {
-            // Pre-detect type from clipboard if pasting
             if let pb = NSPasteboard.general.string(forType: .string), !pb.isEmpty {
                 tokenType = TokenType.detect(from: "", value: pb)
             }

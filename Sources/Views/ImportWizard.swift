@@ -216,7 +216,7 @@ struct ImportWizard: View {
     }
 
     private func envPill(_ env: TokenEnvironment) -> some View {
-        Text(env.rawValue).font(.system(size: 8, weight: .bold))
+        Text(env.rawValue).font(Font.system(size: 8, weight: .bold))
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(Capsule().fill(env.color.bg.swiftUIColor.opacity(0.12)))
             .foregroundColor(env.color.bg.swiftUIColor)
