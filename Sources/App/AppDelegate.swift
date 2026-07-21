@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, ObservableObject {
     private var lockWindow: NSWindow?
     private var settingsWindow: NSWindow?
     private var helpWindow: NSWindow?
+    private var lastUnlockTime = Date.distantPast
 #endif
 }
 
@@ -155,7 +156,7 @@ extension AppDelegate: NSApplicationDelegate {
         if settingsWindow == nil {
             settingsWindow = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
             settingsWindow?.title = "設定"; settingsWindow?.styleMask = [.titled, .closable]
-            settingsWindow?.setContentSize(NSSize(width: 420, height: 340))
+            settingsWindow?.setContentSize(NSSize(width: 420, height: 360))
             settingsWindow?.isReleasedWhenClosed = false; settingsWindow?.center()
         }
         NSApp.activate(ignoringOtherApps: true); settingsWindow?.makeKeyAndOrderFront(nil)
@@ -165,7 +166,7 @@ extension AppDelegate: NSApplicationDelegate {
         if helpWindow == nil {
             helpWindow = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
             helpWindow?.title = "TokenVault 說明"; helpWindow?.styleMask = [.titled, .closable]
-            helpWindow?.setContentSize(NSSize(width: 460, height: 380))
+            helpWindow?.setContentSize(NSSize(width: 480, height: 420))
             helpWindow?.isReleasedWhenClosed = false; helpWindow?.center()
         }
         NSApp.activate(ignoringOtherApps: true); helpWindow?.makeKeyAndOrderFront(nil)
@@ -182,6 +183,7 @@ extension AppDelegate: NSApplicationDelegate {
 
     private func showLockScreen() {
         let lockView = LockView(auth: auth) { [weak self] in
+            self?.lastUnlockTime = Date()
             self?.lockWindow?.close(); self?.lockWindow = nil; self?.showMainContent()
         }
         lockWindow?.close()
@@ -197,6 +199,8 @@ extension AppDelegate: NSApplicationDelegate {
 
     @objc private func autoLock() {
         guard settings.autoLockEnabled, lockWindow == nil else { return }
+        // Don't auto-lock within 3 seconds of unlocking (prevents launch re-lock)
+        guard Date().timeIntervalSince(lastUnlockTime) > 3 else { return }
         auth.lock()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             if self?.auth.isLocked == true { self?.showLockScreen() }
