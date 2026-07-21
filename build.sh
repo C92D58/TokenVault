@@ -11,13 +11,11 @@ RES="Resources"
 killall "$APP" 2>/dev/null || true
 
 rm -rf "$BUILD" /tmp/tv_build
-mkdir -p "$BUNDLE/Contents/MacOS"
-mkdir -p "$BUNDLE/Contents/Resources"
-mkdir -p /tmp/tv_build
+mkdir -p "$BUNDLE/Contents/MacOS" "$BUNDLE/Contents/Resources" /tmp/tv_build
 
 SDK=$(xcrun --show-sdk-path --sdk macosx)
 
-echo "🔨 Compiling..."
+echo "🔨 Compiling (macOS)..."
 swiftc \
   -sdk "$SDK" \
   -target arm64-apple-macos14.0 \
@@ -36,8 +34,13 @@ actool "$ASSETS" --compile "$BUNDLE/Contents/Resources" \
 cp "$RES/Info.plist" "$BUNDLE/Contents/Info.plist"
 
 echo "🔏 Signing..."
-xattr -cr "$BUNDLE" 2>/dev/null || true
-codesign --force --deep --sign - "$BUNDLE"
+# Sign in /tmp to avoid iCloud extended attributes
+rm -rf /tmp/tv_sign
+mkdir -p /tmp/tv_sign/$APP.app/Contents
+cp -R "$BUNDLE/Contents" /tmp/tv_sign/$APP.app/
+codesign --force --deep --sign - /tmp/tv_sign/$APP.app
+rm -rf "$BUNDLE"
+mv /tmp/tv_sign/$APP.app "$BUNDLE"
 
 echo ""
 echo "✅ $BUNDLE"

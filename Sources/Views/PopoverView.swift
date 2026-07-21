@@ -32,7 +32,7 @@ struct PopoverView: View {
                         .font(.system(size: 13, weight: .bold)).tracking(-0.3)
                 }
                 Spacer()
-                Button { (NSApp.delegate as? AppDelegate)?.showMainWindow(); NSApp.keyWindow?.performClose(nil) } label: {
+                Button { (NSApp.delegate as? AppDelegate)?.showMainContent(); NSApp.keyWindow?.performClose(nil) } label: {
                     Image(systemName: "rectangle.split.2x1").font(.system(size: 12))
                         .foregroundColor(.secondary).frame(width: 24, height: 24)
                         .background(Circle().fill(.black.opacity(0.04)))
