@@ -70,7 +70,7 @@ struct PopoverView: View {
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { NSApp.keyWindow?.performClose(nil) }
                             } label: {
                                 popoverRow(token)
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(.plain).focusEffectDisabled()
                         }
                     }
                 }

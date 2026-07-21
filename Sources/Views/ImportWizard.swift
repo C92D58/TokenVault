@@ -66,7 +66,7 @@ struct ImportWizard: View {
                     .font(.system(size: 16))
                     .foregroundColor(.secondary.opacity(0.5))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plain).focusEffectDisabled()
             .keyboardShortcut(.cancelAction)
         }
         .padding(.horizontal, 24).padding(.vertical, 16)

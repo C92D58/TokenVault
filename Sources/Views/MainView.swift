@@ -65,7 +65,8 @@ struct MainView: View {
                 Spacer()
                 Button { showAddGroup = true } label: {
                     Image(systemName: "folder.badge.plus").font(.system(size: 12))
-                }.buttonStyle(.plain).foregroundColor(.secondary)
+                }.buttonStyle(.plain)
+        .focusEffectDisabled().foregroundColor(.secondary)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
 
@@ -152,6 +153,7 @@ struct MainView: View {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.4))
                     }.buttonStyle(.plain)
+        .focusEffectDisabled()
                 }
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
@@ -169,6 +171,7 @@ struct MainView: View {
                                     : Capsule().fill(AnyShapeStyle(.quaternary)))
                                 .foregroundColor(selectedEnv == env ? env.color.bg.swiftUIColor : .secondary)
                         }.buttonStyle(.plain)
+        .focusEffectDisabled()
                     }
                 }
             }
@@ -177,20 +180,24 @@ struct MainView: View {
 
             Button { showImport = true } label: {
                 Image(systemName: "square.and.arrow.down").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("導入 Token").accessibilityLabel("導入 Token")
+            }.buttonStyle(.plain)
+        .focusEffectDisabled().help("導入 Token").accessibilityLabel("導入 Token")
 
             Button { showGenerator = true } label: {
                 Image(systemName: "wand.and.stars").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("Token 產生器").accessibilityLabel("Token 產生器")
+            }.buttonStyle(.plain)
+        .focusEffectDisabled().help("Token 產生器").accessibilityLabel("Token 產生器")
 
             Button { editingToken = nil; showAddToken = true } label: {
                 Image(systemName: "plus.circle.fill").font(.system(size: 16))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            }.buttonStyle(.plain).help("新增 Token").accessibilityLabel("新增 Token")
+            }.buttonStyle(.plain)
+        .focusEffectDisabled().help("新增 Token").accessibilityLabel("新增 Token")
 
             Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
                 Image(systemName: "gearshape").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("設定").accessibilityLabel("設定")
+            }.buttonStyle(.plain)
+        .focusEffectDisabled().help("設定").accessibilityLabel("設定")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -249,6 +256,7 @@ private struct SidebarItem: View {
             .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
             .contentShape(Rectangle())
         }.buttonStyle(.plain)
+        .focusEffectDisabled()
     }
 }
 
@@ -313,12 +321,14 @@ struct TokenCard: View {
                             Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11))
                                 .frame(width: 26, height: 26).background(Circle().fill(copied ? Color.green.opacity(0.1) : Color.primary.opacity(0.04)))
                                 .foregroundColor(copied ? .green : .secondary)
-                        }.buttonStyle(.plain).transition(.scale.combined(with: .opacity))
+                        }.buttonStyle(.plain)
+        .focusEffectDisabled().transition(.scale.combined(with: .opacity))
 
                         Button { onEdit() } label: {
                             Image(systemName: "pencil").font(.system(size: 10)).foregroundColor(.secondary)
                                 .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
                         }.buttonStyle(.plain)
+        .focusEffectDisabled()
 
                         Menu {
                             Button { (NSApp.delegate as? AppDelegate)?.toggleFav(token) } label: {
@@ -331,7 +341,8 @@ struct TokenCard: View {
                         } label: {
                             Image(systemName: "ellipsis").font(.system(size: 10)).foregroundColor(.secondary)
                                 .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
-                        }.buttonStyle(.plain).menuIndicator(.hidden)
+                        }.buttonStyle(.plain)
+        .focusEffectDisabled().menuIndicator(.hidden)
                     }.animation(.easeOut(duration: 0.12), value: isHovering)
                 }
 

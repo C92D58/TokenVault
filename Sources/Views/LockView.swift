@@ -76,7 +76,7 @@ struct LockView: View {
                     .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 1))
                     .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
                 }
-                .buttonStyle(.plain).keyboardShortcut(.return)
+                .buttonStyle(.plain).focusEffectDisabled().keyboardShortcut(.return)
 
                 Spacer()
 
