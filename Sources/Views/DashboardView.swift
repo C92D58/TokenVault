@@ -46,6 +46,7 @@ struct DashboardBar: View {
 
 /// Token Generator + JWT Decoder
 struct TokenGeneratorView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var generatedToken = ""
     @State private var tokenLength = 32
     @State private var includeSpecial = true
@@ -61,7 +62,7 @@ struct TokenGeneratorView: View {
                     .font(.system(size: 14, weight: .bold))
                 Spacer()
                 Button {
-                    NSApp.keyWindow?.close()
+                    dismiss()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 16))
