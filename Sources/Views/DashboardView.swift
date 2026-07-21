@@ -5,17 +5,29 @@ import SwiftUI
 struct DashboardBar: View {
     @ObservedObject var store: DataStore
 
-    private var stats: (total: Int, expired: Int, expiringSoon: Int, mostUsed: TokenItem?) {
+    private var stats: (total: Int, expired: Int, expiringSoon: Int, healthScore: Int, mostUsed: TokenItem?) {
         let total = store.allTokens.count
         let expired = store.allTokens.filter(\.isExpired).count
         let soon = store.allTokens.filter(\.expiresSoon).count
         let mostUsed = store.allTokens.max(by: { $0.copyCount < $1.copyCount })
-        return (total, expired, soon, mostUsed)
+
+        // Health score: 100 - penalties
+        var score = 100
+        if total > 0 {
+            score -= (expired * 15)
+            score -= (soon * 5)
+            // Tokens without expiry lose points
+            let withoutExpiry = store.allTokens.filter { $0.expiresAt == nil }.count
+            score -= withoutExpiry
+        }
+        score = max(0, min(100, score))
+
+        return (total, expired, soon, score, mostUsed)
     }
 
     var body: some View {
         HStack(spacing: 0) {
-            statCard(title: "總數", value: "\(stats.total)", icon: "key.horizontal.fill", color: .accentColor)
+            statCard(title: "健康", value: "\(stats.healthScore)%", icon: healthIcon, color: healthColor, subtitle: stats.total > 0 ? "\(stats.total) 個 Token" : nil)
             Divider().frame(height: 36)
             statCard(title: "即將到期", value: "\(stats.expiringSoon)", icon: "clock.badge.exclamationmark", color: stats.expiringSoon > 0 ? .orange : .secondary)
             Divider().frame(height: 36)
@@ -27,6 +39,14 @@ struct DashboardBar: View {
         .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.06), lineWidth: 1))
         .padding(.horizontal, 14).padding(.top, 8)
+    }
+
+    private var healthIcon: String {
+        stats.healthScore >= 80 ? "heart.fill" : stats.healthScore >= 50 ? "heart" : "heart.slash"
+    }
+
+    private var healthColor: Color {
+        stats.healthScore >= 80 ? .green : stats.healthScore >= 50 ? .orange : .red
     }
 
     private func statCard(title: String, value: String, icon: String, color: Color, subtitle: String? = nil) -> some View {

@@ -187,7 +187,7 @@ extension AppDelegate: NSApplicationDelegate {
         lockWindow?.close()
         lockWindow = NSWindow(contentViewController: NSHostingController(rootView: lockView))
         lockWindow?.title = "TokenVault"; lockWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
-        lockWindow?.setContentSize(NSSize(width: 380, height: 440))
+        lockWindow?.setContentSize(NSSize(width: 400, height: 480))
         lockWindow?.titlebarAppearsTransparent = true; lockWindow?.isMovableByWindowBackground = true
         lockWindow?.center(); lockWindow?.isReleasedWhenClosed = false; lockWindow?.level = .floating
         lockWindow?.makeKeyAndOrderFront(nil)
