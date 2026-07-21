@@ -28,7 +28,7 @@ enum TokenEnvironment: String, Codable, CaseIterable {
 // MARK: - Token Type
 
 enum TokenType: String, Codable, CaseIterable {
-    case github, gitlab, aws, openai, cloudflare, slack, stripe, other
+    case github, gitlab, aws, openai, cloudflare, slack, stripe, tailscale, other
 
     var label: String {
         switch self {
@@ -39,6 +39,7 @@ enum TokenType: String, Codable, CaseIterable {
         case .cloudflare: return "Cloudflare"
         case .slack: return "Slack"
         case .stripe: return "Stripe"
+        case .tailscale: return "Tailscale"
         case .other: return "其他"
         }
     }
@@ -51,6 +52,7 @@ enum TokenType: String, Codable, CaseIterable {
         case .cloudflare: return "globe"
         case .slack: return "tag.fill"
         case .stripe: return "creditcard.fill"
+        case .tailscale: return "point.3.connected.trianglepath.dotted"
         case .other: return "key.fill"
         }
     }
@@ -63,6 +65,7 @@ enum TokenType: String, Codable, CaseIterable {
         case .cloudflare: return "#F38020"
         case .slack: return "#4A154B"
         case .stripe: return "#635BFF"
+        case .tailscale: return "#1A1A1A"
         case .other: return "#6B7280"
         }
     }
@@ -76,6 +79,7 @@ enum TokenType: String, Codable, CaseIterable {
         if q.contains("cloudflare") || q.contains("cf_") { return .cloudflare }
         if q.contains("xoxb-") || q.contains("slack") { return .slack }
         if q.contains("sk_live") || q.contains("sk_test") || q.contains("stripe") { return .stripe }
+        if q.contains("tskey-") || q.contains("tailscale") { return .tailscale }
         return .other
     }
 }
