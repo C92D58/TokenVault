@@ -1,70 +1,114 @@
 import SwiftUI
 
-/// Face ID / Touch ID lock screen shown on launch and when app returns from background.
+/// Refined lock screen with glass-morphism and animated shield.
 struct LockView: View {
     @ObservedObject var auth: AuthService
     let onUnlock: () -> Void
 
-    @State private var animate = false
+    @State private var pulse = false
+    @State private var appear = false
+
+    private let accentGradient = LinearGradient(
+        colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)],
+        startPoint: .topLeading, endPoint: .bottomTrailing
+    )
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ZStack {
+            // Background
+            Color(.controlBackgroundColor)
+            accentGradient.opacity(0.04)
 
-            // Icon with subtle pulse
-            ZStack {
-                Circle()
-                    .fill(.quaternary)
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(animate ? 1.05 : 1.0)
-                    .opacity(animate ? 0.5 : 0.3)
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 36))
-                    .foregroundColor(.accentColor)
-            }
+            VStack(spacing: 28) {
+                Spacer()
 
-            Text("TokenVault")
-                .font(.system(size: 22, weight: .bold))
+                // Animated shield
+                ZStack {
+                    // Outer glow ring
+                    Circle()
+                        .fill(accentGradient.opacity(0.08))
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(pulse ? 1.15 : 1.0)
+                        .opacity(pulse ? 0.4 : 0.15)
 
-            Text("需要 \(auth.biometryType) 解鎖")
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
+                    // Inner ring
+                    Circle()
+                        .stroke(accentGradient.opacity(0.15), lineWidth: 2)
+                        .frame(width: 86, height: 86)
 
-            if auth.authFailed {
-                Text("認證失敗，請重試")
-                    .font(.system(size: 12))
-                    .foregroundColor(.red)
-                    .padding(.top, -8)
-            }
+                    // Center icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(.ultraThinMaterial)
+                            .frame(width: 70, height: 70)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(.white.opacity(0.1), lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
 
-            Button {
-                Task {
-                    let ok = await auth.authenticate()
-                    if ok { onUnlock() }
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 30, weight: .medium))
+                            .foregroundStyle(accentGradient)
+                    }
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: auth.biometryType == "Face ID" ? "faceid" : "touchid")
-                        .font(.system(size: 16))
-                    Text("解鎖")
-                        .font(.system(size: 13, weight: .medium))
+
+                VStack(spacing: 6) {
+                    Text("TokenVault")
+                        .font(.system(size: 24, weight: .bold))
+                        .tracking(-0.5)
+                    Text("需要 \(auth.biometryType) 解鎖")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 24).padding(.vertical, 10)
-                .background(Capsule().fill(.quaternary))
+
+                if auth.authFailed {
+                    Text("認證失敗，再試一次")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 16).padding(.vertical, 6)
+                        .background(Capsule().fill(Color.red.opacity(0.08)))
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                // Unlock button
+                Button {
+                    Task {
+                        let ok = await auth.authenticate()
+                        if ok { onUnlock() }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: auth.biometryType == "Face ID" ? "faceid" : "touchid")
+                            .font(.system(size: 18))
+                        Text("使用 \(auth.biometryType) 解鎖")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .padding(.horizontal, 28).padding(.vertical, 11)
+                    .background(Capsule().fill(.ultraThinMaterial))
+                    .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.return)
+
+                Spacer()
+
+                // Footer
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill").font(.system(size: 8)).foregroundColor(.green.opacity(0.6))
+                    Text("AES-256-GCM · 零知識").font(.system(size: 9))
+                }
+                .foregroundColor(.secondary.opacity(0.4))
+                .padding(.bottom, 24)
             }
-            .buttonStyle(.plain)
-            .keyboardShortcut(.return)
-
-            Spacer()
-
-            Text("WAHSUN")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundColor(.secondary.opacity(0.25))
-                .padding(.bottom, 20)
+            .opacity(appear ? 1 : 0)
+            .offset(y: appear ? 0 : 12)
         }
-        .frame(width: 360, height: 400)
+        .frame(width: 380, height: 440)
         .onAppear {
-            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) { animate = true }
+            withAnimation(.easeOut(duration: 0.5)) { appear = true }
+            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { pulse = true }
         }
     }
 }

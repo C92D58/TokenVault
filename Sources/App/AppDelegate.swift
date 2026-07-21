@@ -149,7 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lockWindow = NSWindow(contentViewController: NSHostingController(rootView: lockView))
         lockWindow?.title = "TokenVault"
         lockWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
-        lockWindow?.setContentSize(NSSize(width: 360, height: 400))
+        lockWindow?.setContentSize(NSSize(width: 380, height: 440))
         lockWindow?.titlebarAppearsTransparent = true
         lockWindow?.isMovableByWindowBackground = true
         lockWindow?.center()
