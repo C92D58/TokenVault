@@ -22,6 +22,8 @@
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
     <string>AppIcon</string>
+    <key>CFBundleSpokenName</key>
+    <string>Token Vault</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
@@ -29,13 +31,18 @@
     <key>NSHumanReadableCopyright</key>
     <string>© 2026 WAHSUN. All rights reserved.</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>TokenVault 使用 Face ID / Touch ID 保護你的 API 密鑰。解鎖後才能存取 Token。</string>
-    <key>com.apple.security.get-task-allow</key>
+    <string>TokenVault 使用 Face ID / Touch ID 保護你的 API 密鑰。解鎖後才能存取 Token。未授權則無法使用 App。</string>
+    <key>NSSupportsAutomaticTermination</key>
     <false/>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.developer-tools</string>
-    <key>NSSupportsAutomaticTermination</key>
-    <false/>
+    <key>LSMinimumSystemVersionByArchitecture</key>
+    <dict>
+        <key>arm64</key>
+        <string>14.0</string>
+    </dict>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>TokenVault 不使用 Apple Events。</string>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>
@@ -47,7 +54,17 @@
             <array>
                 <string>public.json</string>
             </array>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+                <string>json</string>
+            </array>
         </dict>
+    </array>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
     </array>
 </dict>
 </plist>

@@ -180,7 +180,10 @@ struct SettingsView: View {
             let snap = DataStore.BackupSnapshot(groups: d.store.groups, tokens: d.store.allTokens)
             let content = (try? JSONEncoder().encode(snap))?.base64EncodedString() ?? ""
 
-            let url = URL(string: "https://api.github.com/repos/\(repo)/contents/tokenvault-backup.json")!
+            guard let url = URL(string: "https://api.github.com/repos/\(repo)/contents/tokenvault-backup.json") else {
+                await MainActor.run { syncMessage = "❌ 無效的倉庫名稱"; syncing = false }
+                return
+            }
             var req = URLRequest(url: url)
             req.httpMethod = "PUT"
             req.setValue("Bearer \(ghToken)", forHTTPHeaderField: "Authorization")

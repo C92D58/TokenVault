@@ -10,14 +10,26 @@
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
 
-    <!-- Network: GitHub sync / outgoing API calls -->
+    <!-- Network: GitHub sync -->
     <key>com.apple.security.network.client</key>
     <true/>
 
-    <!-- Keychain: Master key storage -->
-    <key>keychain-access-groups</key>
-    <array>
-        <string>$(AppIdentifierPrefix)org.wahsun.tokenvault</string>
-    </array>
+    <!-- Hardened Runtime (Required for notarization) -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <false/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <false/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <false/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <false/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key>
+    <false/>
+
+    <!-- Keychain sharing (only if shared between apps) -->
+    <!-- No sharing needed for single app -->
+
+    <!-- iCloud (not using CloudKit, using file access instead) -->
+    <!-- com.apple.developer.icloud-services not needed -->
 </dict>
 </plist>

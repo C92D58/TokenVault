@@ -145,7 +145,8 @@ struct MainView: View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundColor(.secondary.opacity(0.5)).font(.system(size: 11))
-                TextField("搜尋..." + (selectedEnv != nil ? " · \(selectedEnv!.rawValue)" : ""), text: $searchText)
+                let label = selectedEnv.map { " · \($0.rawValue)" } ?? ""
+                TextField("搜尋..." + label, text: $searchText)
                     .textFieldStyle(.plain).font(.system(size: 12))
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
@@ -176,20 +177,20 @@ struct MainView: View {
 
             Button { showImport = true } label: {
                 Image(systemName: "square.and.arrow.down").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("導入 Token")
+            }.buttonStyle(.plain).help("導入 Token").accessibilityLabel("導入 Token")
 
             Button { showGenerator = true } label: {
                 Image(systemName: "wand.and.stars").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("Token 產生器")
+            }.buttonStyle(.plain).help("Token 產生器").accessibilityLabel("Token 產生器")
 
             Button { editingToken = nil; showAddToken = true } label: {
                 Image(systemName: "plus.circle.fill").font(.system(size: 16))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).help("新增 Token").accessibilityLabel("新增 Token")
 
             Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
                 Image(systemName: "gearshape").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain).help("設定")
+            }.buttonStyle(.plain).help("設定").accessibilityLabel("設定")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
