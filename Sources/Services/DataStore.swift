@@ -31,6 +31,10 @@ final class DataStore: ObservableObject {
 
     // MARK: - Persistence
 
+    struct BackupSnapshot: Codable {
+        var groups: [TokenGroup]; var tokens: [TokenItem]
+    }
+
     private struct Snapshot: Codable {
         var groups: [TokenGroup]; var tokens: [TokenItem]
     }

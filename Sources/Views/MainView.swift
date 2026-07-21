@@ -64,6 +64,12 @@ struct MainView: View {
                     Button { editingToken = nil; showAddToken = true } label: {
                         Image(systemName: "plus.circle.fill").font(.system(size: 18))
                     }.buttonStyle(.plain)
+
+                    Button {
+                        (NSApp.delegate as? AppDelegate)?.showSettings()
+                    } label: {
+                        Image(systemName: "gearshape").font(.system(size: 14))
+                    }.buttonStyle(.plain).foregroundColor(.secondary)
                 }
             }
 
