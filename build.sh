@@ -30,6 +30,7 @@ swiftc \
   $SWIFT_FILES
 
 cp Resources/Info.plist "$APP_BUNDLE/Contents/Info.plist"
+cp Resources/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 
 echo "🔏 Signing..."
 rm -rf "$TMP_DIR"
