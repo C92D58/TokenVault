@@ -6,6 +6,7 @@ struct LockView: View {
 
     @State private var pulse = false
     @State private var appear = false
+    @State private var isActive = true
 
     private let gradient = LinearGradient(
         colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)],
@@ -23,7 +24,7 @@ struct LockView: View {
                 // Shield icon
                 ZStack {
                     Circle().fill(gradient.opacity(0.08)).frame(width: 100, height: 100)
-                        .scaleEffect(pulse ? 1.12 : 1.0).opacity(pulse ? 0.4 : 0.15)
+                        .scaleEffect(pulse && isActive ? 1.12 : 1.0).opacity(pulse && isActive ? 0.4 : 0.15)
                     Circle().stroke(gradient.opacity(0.15), lineWidth: 2).frame(width: 86, height: 86)
                     ZStack {
                         RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial).frame(width: 70, height: 70)
@@ -40,7 +41,7 @@ struct LockView: View {
                 Text("TokenVault")
                     .font(.system(size: 26, weight: .bold)).tracking(-0.6)
 
-                Text("零知識 API Token 管理器")
+                Text("API Token 管理器")
                     .font(.system(size: 12)).foregroundColor(.secondary).padding(.top, 4)
 
                 Spacer().frame(height: 8)
@@ -93,7 +94,7 @@ struct LockView: View {
 
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill").font(.system(size: 7)).foregroundColor(.green.opacity(0.5))
-                        Text("AES-256-GCM 加密 · 零知識架構").font(.system(size: 8))
+                        Text("AES-256-GCM 加密").font(.system(size: 8))
                             .foregroundColor(.secondary.opacity(0.35))
                     }
                 }
@@ -103,8 +104,13 @@ struct LockView: View {
         }
         .frame(width: 400, height: 480)
         .onAppear {
+            isActive = true
             withAnimation(.easeOut(duration: 0.5)) { appear = true }
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { pulse = true }
+        }
+        .onDisappear {
+            isActive = false
+            pulse = false
         }
     }
 }

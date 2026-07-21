@@ -32,7 +32,7 @@ struct AboutView: View {
             }
 
             VStack(spacing: 6) {
-                Text("零知識 API Token 管理器")
+                Text("API Token 管理器")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
 

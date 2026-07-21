@@ -76,7 +76,7 @@ struct HelpView: View {
                     Text("所有 Token 值使用 AES-256-GCM 加密後儲存。主密鑰存放在 Secure Enclave 中，從不離開你的裝置。即使 iCloud 或 GitHub 上的數據被竊取，也無法解密。")
                 }
 
-                guideSection("零知識", icon: "eye.slash") {
+                guideSection("資料隱私", icon: "eye.slash") {
                     Text("TokenVault 開發者（WAHSUN）無法存取你的任何 Token。加密和解密完全在你的裝置上進行。我們沒有伺服器，無法查看你的數據。")
                 }
 
