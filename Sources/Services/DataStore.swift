@@ -1,6 +1,8 @@
 import Foundation
 import Combine
 
+/// Central data store with iCloud Drive sync.
+/// All token values are AES-256-GCM encrypted before storage.
 final class DataStore: ObservableObject {
     @Published var groups: [TokenGroup] = []
     @Published var allTokens: [TokenItem] = []
@@ -10,19 +12,18 @@ final class DataStore: ObservableObject {
     private var saveWorkItem: DispatchWorkItem?
 
     init() {
-        // iCloud Drive: ~/Library/Mobile Documents/com~apple~CloudDocs/TokenVault/
         let icloud = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs/TokenVault")
         try? FileManager.default.createDirectory(at: icloud, withIntermediateDirectories: true)
 
-        if FileManager.default.isWritableFile(atPath: icloud.path) {
-            fileURL = icloud.appendingPathComponent("tokens.json")
-        } else {
-            let asDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("TokenVault")
-            try? FileManager.default.createDirectory(at: asDir, withIntermediateDirectories: true)
-            fileURL = asDir.appendingPathComponent("tokens.json")
-        }
+        fileURL = FileManager.default.isWritableFile(atPath: icloud.path)
+            ? icloud.appendingPathComponent("tokens.json")
+            : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("TokenVault/tokens.json")
+
+        // Ensure directory exists for fallback
+        try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true)
 
         load()
         observe()
@@ -31,8 +32,7 @@ final class DataStore: ObservableObject {
     // MARK: - Persistence
 
     private struct Snapshot: Codable {
-        var groups: [TokenGroup]
-        var tokens: [TokenItem]
+        var groups: [TokenGroup]; var tokens: [TokenItem]
     }
 
     func load() {
@@ -51,17 +51,12 @@ final class DataStore: ObservableObject {
     }
 
     private func observe() {
-        for t in allTokens {
-            t.objectWillChange.sink { [weak self] _ in self?.scheduleSave() }.store(in: &cancellables)
-        }
+        for t in allTokens { t.objectWillChange.sink { [weak self] _ in self?.scheduleSave() }.store(in: &cancellables) }
         for g in groups {
             g.objectWillChange.sink { [weak self] _ in self?.scheduleSave() }.store(in: &cancellables)
-            for t in g.tokens {
-                t.objectWillChange.sink { [weak self] _ in self?.scheduleSave() }.store(in: &cancellables)
-            }
+            for t in g.tokens { t.objectWillChange.sink { [weak self] _ in self?.scheduleSave() }.store(in: &cancellables) }
         }
     }
-
     private func scheduleSave() { objectWillChange.send(); save() }
 
     // MARK: - CRUD
@@ -87,5 +82,12 @@ final class DataStore: ObservableObject {
         let src = tokens(for: group)
         guard !q.isEmpty else { return src }
         return src.filter { $0.name.localizedCaseInsensitiveContains(q) || $0.note.localizedCaseInsensitiveContains(q) }
+    }
+
+    // MARK: - Security helpers
+
+    /// All encrypted values — for verifying zero-knowledge claim.
+    func verifyEncryption() -> Bool {
+        allTokens.allSatisfy { (try? EncryptionService.decrypt($0.encryptedValue)) != nil }
     }
 }

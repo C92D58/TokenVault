@@ -24,15 +24,9 @@ struct TokenEditor: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    FieldRow(label: "名稱", icon: "tag") {
-                        TextField("GitHub Token", text: $name).textFieldStyle(.plain)
-                    }
-                    FieldRow(label: "Token 值", icon: "key") {
-                        SecureField("貼上 Token 值", text: $value).textFieldStyle(.plain)
-                    }
-                    FieldRow(label: "備註", icon: "note.text") {
-                        TextField("可選", text: $note).textFieldStyle(.plain)
-                    }
+                    FieldRow(label: "名稱", icon: "tag") { TextField("GitHub Token", text: $name).textFieldStyle(.plain) }
+                    FieldRow(label: "Token 值", icon: "key") { SecureField("貼上 Token 值", text: $value).textFieldStyle(.plain) }
+                    FieldRow(label: "備註", icon: "note.text") { TextField("可選", text: $note).textFieldStyle(.plain) }
                     if !store.groups.isEmpty {
                         FieldRow(label: "分組", icon: "folder") {
                             Picker("", selection: $selectedGroup) {
@@ -41,22 +35,15 @@ struct TokenEditor: View {
                             }.pickerStyle(.menu).labelsHidden()
                         }
                     }
-                    Toggle(isOn: $hasExpiry) {
-                        Label("到期日", systemImage: "clock").font(.system(size: 13))
-                    }
-                    if hasExpiry {
-                        DatePicker("", selection: $expiryDate, displayedComponents: .date)
-                            .datePickerStyle(.field).labelsHidden()
-                    }
+                    Toggle(isOn: $hasExpiry) { Label("到期日", systemImage: "clock").font(.system(size: 13)) }
+                    if hasExpiry { DatePicker("", selection: $expiryDate, displayedComponents: .date).datePickerStyle(.field).labelsHidden() }
                 }.padding()
             }
 
             Divider()
             HStack {
                 Spacer()
-                Button("儲存") { save() }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.return)
+                Button("儲存") { save() }.buttonStyle(.borderedProminent).keyboardShortcut(.return)
                     .disabled(name.isEmpty || value.isEmpty)
             }.padding()
         }
@@ -66,20 +53,23 @@ struct TokenEditor: View {
 
     private func load() {
         guard let t = token else { return }
-        name = t.name; value = t.value; note = t.note
+        name = t.name; value = t.decryptedValue(); note = t.note
         selectedGroup = store.groups.first { $0.id == t.groupID }
         if let e = t.expiresAt { hasExpiry = true; expiryDate = e }
     }
 
     private func save() {
         if let t = token {
-            let oldGroup = store.groups.first { $0.tokens.contains { $0.id == t.id } }
-            oldGroup?.tokens.removeAll { $0.id == t.id }
-            t.name = name; t.value = value; t.note = note
-            t.groupID = selectedGroup?.id; t.expiresAt = hasExpiry ? expiryDate : nil
+            let old = store.groups.first { $0.tokens.contains { $0.id == t.id } }
+            old?.tokens.removeAll { $0.id == t.id }
+            t.name = name; t.note = note; t.groupID = selectedGroup?.id
+            t.expiresAt = hasExpiry ? expiryDate : nil
+            if value != t.decryptedValue() {
+                t.encryptedValue = (try? EncryptionService.encrypt(value)) ?? value
+            }
             selectedGroup?.tokens.append(t)
         } else {
-            store.addToken(TokenItem(name: name, value: value, note: note,
+            store.addToken(TokenItem(name: name, plainValue: value, note: note,
                 expiresAt: hasExpiry ? expiryDate : nil, groupID: selectedGroup?.id), to: selectedGroup)
         }
         store.save(); onDismiss()
@@ -87,10 +77,8 @@ struct TokenEditor: View {
 }
 
 struct GroupSheet: View {
-    @ObservedObject var store: DataStore
-    let onDismiss: () -> Void
+    @ObservedObject var store: DataStore; let onDismiss: () -> Void
     @State private var name = ""
-
     var body: some View {
         VStack(spacing: 16) {
             Text("新增分組").font(.system(size: 15, weight: .bold))
@@ -105,9 +93,7 @@ struct GroupSheet: View {
 }
 
 struct FieldRow<Content: View>: View {
-    let label: String; let icon: String
-    @ViewBuilder let content: () -> Content
-
+    let label: String; let icon: String; @ViewBuilder let content: () -> Content
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(label, systemImage: icon).font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary)

@@ -6,14 +6,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var popover: NSPopover!
     private var mainWindow: NSWindow?
+    private var lockWindow: NSWindow?
+
     let store = DataStore()
+    let auth = AuthService()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMenuBar()
         setupMainWindow()
         setupGlobalHotkey()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in self?.showMainWindow() }
         buildMenu()
+
+        // Show lock screen first
+        showLockScreen()
+
+        // Auto-lock on resign active
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(autoLock),
+            name: NSApplication.didResignActiveNotification, object: nil
+        )
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
@@ -25,10 +36,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let app = NSMenu()
         app.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(showAbout), keyEquivalent: ""))
         app.addItem(.separator())
+        app.addItem(NSMenuItem(title: "鎖定", action: #selector(lockApp), keyEquivalent: "l"))
+        app.addItem(.separator())
         app.addItem(NSMenuItem(title: "隱藏", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
         app.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         main.addItem({ let i = NSMenuItem(); i.submenu = app; return i }())
-
         let file = NSMenu(title: "File")
         file.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
         file.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
@@ -38,12 +50,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func newToken() { showMainWindow(); NotificationCenter.default.post(name: .showAddToken, object: nil) }
     @objc private func newGroup() { showMainWindow(); NotificationCenter.default.post(name: .showAddGroup, object: nil) }
+    @objc private func lockApp() { auth.lock(); showLockScreen() }
 
     @objc private func showAbout() {
         let win = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
         win.title = "關於 TokenVault"; win.styleMask = [.titled, .closable]
-        win.setContentSize(NSSize(width: 320, height: 200)); win.center(); win.isReleasedWhenClosed = false
+        win.setContentSize(NSSize(width: 320, height: 280)); win.center(); win.isReleasedWhenClosed = false
         NSApp.activate(ignoringOtherApps: true); win.makeKeyAndOrderFront(nil)
+    }
+
+    // MARK: - Lock Screen
+
+    private func showLockScreen() {
+        let lockView = LockView(auth: auth) { [weak self] in
+            self?.lockWindow?.close()
+            self?.lockWindow = nil
+            self?.showMainWindow()
+        }
+        let hosting = NSHostingController(rootView: lockView)
+
+        lockWindow?.close()
+        lockWindow = NSWindow(contentViewController: hosting)
+        lockWindow?.title = "TokenVault"
+        lockWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
+        lockWindow?.setContentSize(NSSize(width: 360, height: 400))
+        lockWindow?.titlebarAppearsTransparent = true
+        lockWindow?.isMovableByWindowBackground = true
+        lockWindow?.center()
+        lockWindow?.isReleasedWhenClosed = false
+        lockWindow?.level = .floating
+        lockWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Auto-authenticate
+        Task { await auth.authenticate(); /* handled by callback */ }
+    }
+
+    @objc private func autoLock() {
+        if lockWindow == nil {
+            auth.lock()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                if self?.auth.isLocked == true { self?.showLockScreen() }
+            }
+        }
     }
 
     // MARK: - Menu Bar
@@ -56,6 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "顯示主視窗", action: #selector(showMainWindow), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "鎖定", action: #selector(lockApp), keyEquivalent: "l"))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -82,11 +132,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func showMainWindow() {
+        guard !auth.isLocked else { showLockScreen(); return }
         NSApp.activate(ignoringOtherApps: true)
         mainWindow?.makeKeyAndOrderFront(nil)
     }
 
-    // MARK: - ⌘⇧T Global Hotkey
+    // MARK: - ⌘⇧T
 
     private func setupGlobalHotkey() {
         var ref: EventHotKeyRef?
@@ -99,10 +150,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 nil, MemoryLayout<EventHotKeyID>.size, nil, &hid)
             if hid.id == 1 {
                 DispatchQueue.main.async {
-                    guard let d = NSApp.delegate as? AppDelegate,
+                    guard let d = NSApp.delegate as? AppDelegate, !d.auth.isLocked,
                           let t = d.store.allTokens.sorted(by: { $0.copyCount > $1.copyCount }).first
                     else { return }
-                    ClipboardService.shared.copy(t.value); t.copyCount += 1; d.store.save()
+                    ClipboardService.shared.copy(t.decryptedValue()); t.copyCount += 1; d.store.save()
                 }
             }
             return noErr
