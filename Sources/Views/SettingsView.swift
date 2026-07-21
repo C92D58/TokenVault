@@ -168,7 +168,7 @@ struct SettingsView: View {
         let repo = settings.githubRepo.trimmingCharacters(in: .whitespaces)
         guard !repo.isEmpty else { syncMessage = "請輸入倉庫"; syncing = false; return }
 
-        Task.detached { [settings] in
+        Task.detached {
             let tag = "org.wahsun.tokenvault.ghtoken".data(using: .utf8)!
             guard let ghData = try? KeychainService.read(tag: tag),
                   let ghToken = String(data: ghData, encoding: .utf8) else {

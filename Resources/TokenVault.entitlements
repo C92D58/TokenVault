@@ -2,10 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- App Sandbox (Required for Mac App Store) -->
     <key>com.apple.security.app-sandbox</key>
-    <false/>
+    <true/>
+
+    <!-- File Access: User-selected files for import/export -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
+
+    <!-- Network: GitHub sync / outgoing API calls -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- Keychain: Master key storage -->
     <key>keychain-access-groups</key>
     <array>
         <string>$(AppIdentifierPrefix)org.wahsun.tokenvault</string>

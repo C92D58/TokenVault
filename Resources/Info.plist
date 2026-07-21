@@ -29,8 +29,25 @@
     <key>NSHumanReadableCopyright</key>
     <string>© 2026 WAHSUN. All rights reserved.</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>TokenVault 使用 Face ID 保護你的 API 密鑰，解鎖後才能存取。</string>
+    <string>TokenVault 使用 Face ID / Touch ID 保護你的 API 密鑰。解鎖後才能存取 Token。</string>
     <key>com.apple.security.get-task-allow</key>
     <false/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.developer-tools</string>
+    <key>NSSupportsAutomaticTermination</key>
+    <false/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>TokenVault Backup</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.json</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
