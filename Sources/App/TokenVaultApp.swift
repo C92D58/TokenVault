@@ -3,10 +3,7 @@ import SwiftUI
 @main
 struct TokenVaultApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
     var body: some Scene {
-        Settings {
-            EmptyView()
-        }
+        Settings { EmptyView() }
     }
 }

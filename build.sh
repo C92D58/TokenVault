@@ -1,45 +1,51 @@
 #!/bin/bash
 set -e
 
-APP_NAME="TokenVault"
-BUILD_DIR=".build"
-TMP_DIR="/tmp/TokenVaultBuild"
-APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
-SRC_DIR="Sources"
+APP="TokenVault"
+BUILD=".build"
+BUNDLE="$BUILD/$APP.app"
+SRC="Sources"
+ASSETS="Assets.xcassets"
+RES="Resources"
 
-# Kill running instance
-killall "$APP_NAME" 2>/dev/null || true
+# Kill running
+killall "$APP" 2>/dev/null || true
 
-rm -rf "$BUILD_DIR"
-mkdir -p "$APP_BUNDLE/Contents/MacOS"
-mkdir -p "$APP_BUNDLE/Contents/Resources"
+rm -rf "$BUILD" /tmp/tv_build
+mkdir -p "$BUNDLE/Contents/MacOS"
+mkdir -p "$BUNDLE/Contents/Resources"
 
-echo "🔨 Compiling..."
-SWIFT_FILES=$(find "$SRC_DIR" -name "*.swift" | sort)
-SDK_PATH=$(xcrun --show-sdk-path)
+SDK=$(xcrun --show-sdk-path --sdk macosx)
+TOOLCHAIN=$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain
 
+echo "🔨 Compiling Swift..."
 swiftc \
-  -sdk "$SDK_PATH" \
+  -sdk "$SDK" \
   -target arm64-apple-macos14.0 \
-  -framework SwiftUI \
-  -framework AppKit \
-  -framework Combine \
-  -framework Carbon \
+  -F "$SDK/System/Library/Frameworks" \
+  -framework SwiftUI -framework AppKit -framework Combine -framework Carbon \
   -O \
-  -o "$APP_BUNDLE/Contents/MacOS/$APP_NAME" \
-  $SWIFT_FILES
+  -o "$BUNDLE/Contents/MacOS/$APP" \
+  $(find "$SRC" -name "*.swift" | sort)
 
-cp Resources/Info.plist "$APP_BUNDLE/Contents/Info.plist"
-cp Resources/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+echo "🎨 Compiling assets..."
+mkdir -p /tmp/tv_build
+actool "$ASSETS" \
+  --compile "$BUNDLE/Contents/Resources" \
+  --platform macosx \
+  --minimum-deployment-target 14.0 \
+  --app-icon AppIcon \
+  --output-partial-info-plist /tmp/tv_build/partial.plist \
+  2>&1 | grep -v "^$" || true
+
+# Merge partial plist into Info.plist
+/usr/libexec/PlistBuddy -c "Merge /tmp/tv_build/partial.plist" "$RES/Info.plist" 2>/dev/null || true
+cp "$RES/Info.plist" "$BUNDLE/Contents/Info.plist"
 
 echo "🔏 Signing..."
-rm -rf "$TMP_DIR"
-mkdir -p "$TMP_DIR/$APP_NAME.app/Contents"
-cp -R "$APP_BUNDLE/Contents" "$TMP_DIR/$APP_NAME.app/"
-codesign --force --deep --sign - "$TMP_DIR/$APP_NAME.app"
-rm -rf "$APP_BUNDLE"
-mv "$TMP_DIR/$APP_NAME.app" "$APP_BUNDLE"
+xattr -cr "$BUNDLE" 2>/dev/null || true
+codesign --force --deep --sign - "$BUNDLE"
 
 echo ""
-echo "✅ Build complete: $APP_BUNDLE"
-echo "   Run: open $APP_BUNDLE"
+echo "✅ $BUNDLE"
+echo "   open $BUNDLE"

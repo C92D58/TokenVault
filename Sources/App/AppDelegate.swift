@@ -12,59 +12,48 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBar()
         setupMainWindow()
         setupGlobalHotkey()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.showMainWindow()
-        }
-
-        buildAppMenu()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in self?.showMainWindow() }
+        buildMenu()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
-    private func buildAppMenu() {
-        let mainMenu = NSMenu()
+    // MARK: - Menu
 
-        let appMenu = NSMenu()
-        appMenu.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(showAbout), keyEquivalent: ""))
-        appMenu.addItem(.separator())
-        appMenu.addItem(NSMenuItem(title: "隱藏", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
-        appMenu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        mainMenu.addItem({ let i = NSMenuItem(); i.submenu = appMenu; return i }())
+    private func buildMenu() {
+        let main = NSMenu()
+        let app = NSMenu()
+        app.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(showAbout), keyEquivalent: ""))
+        app.addItem(.separator())
+        app.addItem(NSMenuItem(title: "隱藏", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
+        app.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        main.addItem({ let i = NSMenuItem(); i.submenu = app; return i }())
 
-        let fileMenu = NSMenu(title: "File")
-        fileMenu.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
-        fileMenu.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
-        mainMenu.addItem({ let i = NSMenuItem(); i.submenu = fileMenu; return i }())
-
-        NSApplication.shared.mainMenu = mainMenu
+        let file = NSMenu(title: "File")
+        file.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
+        file.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
+        main.addItem({ let i = NSMenuItem(); i.submenu = file; return i }())
+        NSApplication.shared.mainMenu = main
     }
 
     @objc private func newToken() { showMainWindow(); NotificationCenter.default.post(name: .showAddToken, object: nil) }
     @objc private func newGroup() { showMainWindow(); NotificationCenter.default.post(name: .showAddGroup, object: nil) }
 
     @objc private func showAbout() {
-        let about = AboutView()
-        let hosting = NSHostingController(rootView: about)
-        let win = NSWindow(contentViewController: hosting)
-        win.title = "關於 TokenVault"
-        win.styleMask = [.titled, .closable]
-        win.setContentSize(NSSize(width: 320, height: 200))
-        win.center()
-        win.isReleasedWhenClosed = false
-        NSApp.activate(ignoringOtherApps: true)
-        win.makeKeyAndOrderFront(nil)
+        let win = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
+        win.title = "關於 TokenVault"; win.styleMask = [.titled, .closable]
+        win.setContentSize(NSSize(width: 320, height: 200)); win.center(); win.isReleasedWhenClosed = false
+        NSApp.activate(ignoringOtherApps: true); win.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Menu Bar
 
     private func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "key.horizontal.fill", accessibilityDescription: "TokenVault")
-            button.toolTip = "TokenVault"
+        if let btn = statusItem.button {
+            btn.image = NSImage(systemSymbolName: "key.horizontal.fill", accessibilityDescription: "TokenVault")
+            btn.toolTip = "TokenVault"
         }
-
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "顯示主視窗", action: #selector(showMainWindow), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -74,14 +63,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 340, height: 460)
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView: MenuBarPopover(store: store))
+        popover.contentViewController = NSHostingController(rootView: PopoverView(store: store))
     }
+
+    // MARK: - Main Window
 
     private func setupMainWindow() {
         let hosting = NSHostingController(rootView: MainView(store: store))
         mainWindow = NSWindow(contentViewController: hosting)
         mainWindow?.title = "TokenVault"
-        mainWindow?.setContentSize(NSSize(width: 520, height: 600))
+        mainWindow?.setContentSize(NSSize(width: 540, height: 640))
         mainWindow?.minSize = NSSize(width: 400, height: 400)
         mainWindow?.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         mainWindow?.center()
@@ -95,13 +86,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow?.makeKeyAndOrderFront(nil)
     }
 
-    // MARK: - Global Hotkey ⌘⇧T
+    // MARK: - ⌘⇧T Global Hotkey
 
     private func setupGlobalHotkey() {
-        var hotKeyRef: EventHotKeyRef?
-        var id = EventHotKeyID(signature: 0x544B5654, id: 1)
-        RegisterEventHotKey(UInt32(kVK_ANSI_T), UInt32(cmdKey | shiftKey), id,
-            GetApplicationEventTarget(), 0, &hotKeyRef)
+        var ref: EventHotKeyRef?
+        var gid = EventHotKeyID(signature: 0x544B5654, id: 1)
+        RegisterEventHotKey(UInt32(kVK_ANSI_T), UInt32(cmdKey | shiftKey), gid, GetApplicationEventTarget(), 0, &ref)
         var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         InstallEventHandler(GetApplicationEventTarget(), { _, event, _ in
             var hid = EventHotKeyID()
@@ -109,18 +99,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 nil, MemoryLayout<EventHotKeyID>.size, nil, &hid)
             if hid.id == 1 {
                 DispatchQueue.main.async {
-                    if let d = NSApp.delegate as? AppDelegate,
-                       let t = d.store.allTokens.sorted(by: { $0.copyCount > $1.copyCount }).first {
-                        ClipboardService.shared.copy(t.value); t.copyCount += 1; d.store.save()
-                    }
+                    guard let d = NSApp.delegate as? AppDelegate,
+                          let t = d.store.allTokens.sorted(by: { $0.copyCount > $1.copyCount }).first
+                    else { return }
+                    ClipboardService.shared.copy(t.value); t.copyCount += 1; d.store.save()
                 }
             }
             return noErr
         }, 1, &spec, nil, nil)
     }
 }
-
-// MARK: - Notifications
 
 extension Notification.Name {
     static let showAddToken = Notification.Name("showAddToken")
