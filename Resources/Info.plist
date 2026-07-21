@@ -26,5 +26,7 @@
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>© 2026 WAHSUN. All rights reserved.</string>
 </dict>
 </plist>

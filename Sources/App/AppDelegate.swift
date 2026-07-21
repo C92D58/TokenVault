@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let mainMenu = NSMenu()
 
         let appMenu = NSMenu()
-        appMenu.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: ""))
+        appMenu.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(showAbout), keyEquivalent: ""))
         appMenu.addItem(.separator())
         appMenu.addItem(NSMenuItem(title: "隱藏", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
         appMenu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -42,6 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func newToken() { showMainWindow(); NotificationCenter.default.post(name: .showAddToken, object: nil) }
     @objc private func newGroup() { showMainWindow(); NotificationCenter.default.post(name: .showAddGroup, object: nil) }
+
+    @objc private func showAbout() {
+        let about = AboutView()
+        let hosting = NSHostingController(rootView: about)
+        let win = NSWindow(contentViewController: hosting)
+        win.title = "關於 TokenVault"
+        win.styleMask = [.titled, .closable]
+        win.setContentSize(NSSize(width: 320, height: 200))
+        win.center()
+        win.isReleasedWhenClosed = false
+        NSApp.activate(ignoringOtherApps: true)
+        win.makeKeyAndOrderFront(nil)
+    }
 
     // MARK: - Menu Bar
 

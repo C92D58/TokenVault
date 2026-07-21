@@ -74,6 +74,8 @@ struct MenuBarPopover: View {
             HStack {
                 Text("⌘⇧T 最近").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
                 Spacer()
+                Text("WAHSUN").font(.system(size: 9, weight: .medium)).foregroundColor(.secondary.opacity(0.3))
+                Text("·").foregroundColor(.secondary.opacity(0.2))
                 Text("\(store.allTokens.count)").font(.system(size: 10, design: .monospaced)).foregroundColor(.secondary.opacity(0.4))
             }
             .padding(.horizontal, 14).padding(.vertical, 8)

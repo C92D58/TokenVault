@@ -37,6 +37,16 @@ struct MainView: View {
                     }
                     .padding(16)
                 }
+                // Brand footer
+                Divider().padding(.horizontal, 16)
+                HStack {
+                    Spacer()
+                    Text("WAHSUN")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.secondary.opacity(0.25))
+                    Spacer()
+                }
+                .padding(.vertical, 6)
             }
         }
         .background(Color(.windowBackgroundColor))
