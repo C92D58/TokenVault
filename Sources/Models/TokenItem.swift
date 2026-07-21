@@ -40,7 +40,8 @@ final class TokenGroup: ObservableObject, Identifiable, Codable, Hashable {
     }
 }
 
-final class TokenItem: ObservableObject, Identifiable, Codable {
+final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
+    static func == (lhs: TokenItem, rhs: TokenItem) -> Bool { lhs.id == rhs.id }
     let id: UUID
     @Published var name: String
     @Published var value: String
