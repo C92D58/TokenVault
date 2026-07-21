@@ -62,13 +62,19 @@ struct AboutView: View {
             VStack(spacing: 6) {
                 Text("© 2026 WAHSUN").font(.system(size: 11, weight: .medium))
                 HStack(spacing: 6) {
-                    Link(destination: URL(string: "mailto:x@wahsun.org")!) {
+                    Button {
+                        NSWorkspace.shared.open(URL(string: "mailto:x@wahsun.org")!)
+                    } label: {
                         Label("x@wahsun.org", systemImage: "envelope").font(.system(size: 10))
                     }
+                    .buttonStyle(.plain).focusEffectDisabled()
                     Text("·").foregroundColor(.secondary)
-                    Link(destination: URL(string: "https://wahsun.org")!) {
+                    Button {
+                        NSWorkspace.shared.open(URL(string: "https://wahsun.org")!)
+                    } label: {
                         Label("wahsun.org", systemImage: "globe").font(.system(size: 10))
                     }
+                    .buttonStyle(.plain).focusEffectDisabled()
                 }.foregroundColor(.secondary)
             }
 
