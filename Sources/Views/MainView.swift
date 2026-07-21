@@ -11,6 +11,7 @@ struct MainView: View {
     @State private var selectedType: TokenType? = nil
     @State private var showAddToken = false
     @State private var showAddGroup = false
+    @State private var showGenerator = false
     @State private var editingToken: TokenItem? = nil
 
     var tokens: [TokenItem] {
@@ -28,6 +29,7 @@ struct MainView: View {
 
             // Content
             VStack(spacing: 0) {
+                DashboardBar(store: store)
                 toolbar
                 Divider()
                 if tokens.isEmpty { emptyState } else { tokenList }
@@ -40,6 +42,9 @@ struct MainView: View {
         .sheet(isPresented: $showAddGroup) {
             GroupSheet(store: store) { showAddGroup = false }
         }
+        .sheet(isPresented: $showGenerator) {
+            TokenGeneratorView()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .showAddToken)) { _ in
             editingToken = nil; showAddToken = true
         }
@@ -47,6 +52,9 @@ struct MainView: View {
             showAddGroup = true
         }
         .onChange(of: editingToken) { _, _ in if editingToken != nil { showAddToken = true } }
+        .overlay(alignment: .bottomTrailing) {
+            KeyboardHUD().padding(20)
+        }
     }
 
     // MARK: - Sidebar
@@ -173,6 +181,10 @@ struct MainView: View {
             Button { editingToken = nil; showAddToken = true } label: {
                 Image(systemName: "plus.circle.fill").font(.system(size: 16))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }.buttonStyle(.plain)
+
+            Button { showGenerator = true } label: {
+                Image(systemName: "wand.and.stars").font(.system(size: 13)).foregroundColor(.secondary)
             }.buttonStyle(.plain)
 
             Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {

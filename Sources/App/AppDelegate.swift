@@ -40,6 +40,9 @@ extension AppDelegate {
         let value = token.decryptedValue()
         ClipboardService.shared.copy(value, clearAfter: TimeInterval(settings.clipboardClearSeconds))
         token.copyCount += 1; store.save()
+#if os(macOS)
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+#endif
     }
 }
 
