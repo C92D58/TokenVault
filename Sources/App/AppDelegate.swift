@@ -51,6 +51,7 @@ extension AppDelegate {
 extension Notification.Name {
     static let showAddToken = Notification.Name("showAddToken")
     static let showAddGroup = Notification.Name("showAddGroup")
+    static let showImportWizard = Notification.Name("showImportWizard")
 }
 
 // MARK: - macOS: NSApplicationDelegate
@@ -92,8 +93,8 @@ extension AppDelegate: NSApplicationDelegate {
         file.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
         file.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
         file.addItem(.separator())
+        file.addItem(NSMenuItem(title: "匯入...", action: #selector(showImport), keyEquivalent: "i"))
         file.addItem(NSMenuItem(title: "匯出備份...", action: #selector(exportBackup), keyEquivalent: "e"))
-        file.addItem(NSMenuItem(title: "匯入備份...", action: #selector(importBackup), keyEquivalent: "i"))
         main.addItem({ let i = NSMenuItem(); i.submenu = file; return i }())
 
         let help = NSMenu(title: "Help")
@@ -215,6 +216,12 @@ extension AppDelegate: NSApplicationDelegate {
         }
     }
 
+    @objc func showImport() {
+        showMainContent()
+        NotificationCenter.default.post(name: .showImportWizard, object: nil)
+    }
+
+    // Legacy: JSON-only backup import
     @objc func importBackup() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.json]

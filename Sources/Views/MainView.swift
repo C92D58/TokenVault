@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Hoppscotch-Inspired Main View
+// MARK: - Main View (NavigationSplitView)
 
 struct MainView: View {
     @ObservedObject var store: DataStore
@@ -12,7 +12,9 @@ struct MainView: View {
     @State private var showAddToken = false
     @State private var showAddGroup = false
     @State private var showGenerator = false
+    @State private var showImport = false
     @State private var editingToken: TokenItem? = nil
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var tokens: [TokenItem] {
         var result = store.search(searchText, in: selectedGroup)
@@ -22,19 +24,11 @@ struct MainView: View {
     }
 
     var body: some View {
-        HSplitView {
-            // Sidebar
-            sidebar
-                .frame(minWidth: 180, idealWidth: 200, maxWidth: 240)
-
-            // Content
-            VStack(spacing: 0) {
-                DashboardBar(store: store)
-                toolbar
-                Divider()
-                if tokens.isEmpty { emptyState } else { tokenList }
-            }
-            .background(Color(.controlBackgroundColor))
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            sidebarView
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+        } detail: {
+            contentView
         }
         .sheet(isPresented: $showAddToken) {
             TokenEditor(store: store, token: editingToken) { showAddToken = false; editingToken = nil }
@@ -45,30 +39,28 @@ struct MainView: View {
         .sheet(isPresented: $showGenerator) {
             TokenGeneratorView()
         }
+        .sheet(isPresented: $showImport) {
+            ImportWizard(store: store) { showImport = false }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .showAddToken)) { _ in
             editingToken = nil; showAddToken = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .showAddGroup)) { _ in
             showAddGroup = true
         }
-        .onChange(of: editingToken) { _, _ in if editingToken != nil { showAddToken = true } }
-        .overlay(alignment: .bottomTrailing) {
-            KeyboardHUD().padding(20)
+        .onReceive(NotificationCenter.default.publisher(for: .showImportWizard)) { _ in
+            showImport = true
         }
+        .onChange(of: editingToken) { _, _ in if editingToken != nil { showAddToken = true } }
     }
 
     // MARK: - Sidebar
 
-    private var sidebar: some View {
+    private var sidebarView: some View {
         VStack(spacing: 0) {
-            // Brand header
+            // Brand
             HStack(spacing: 7) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 22, height: 22)
-                    Image(systemName: "key.horizontal.fill").font(.system(size: 10, weight: .bold)).foregroundColor(.white)
-                }
+                brandIcon
                 Text("TokenVault").font(.system(size: 12, weight: .bold)).tracking(-0.2)
                 Spacer()
                 Button { showAddGroup = true } label: {
@@ -79,76 +71,78 @@ struct MainView: View {
 
             Divider()
 
-            // Groups
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
-                    sidebarItem("所有 Token", icon: "tray.full.fill", count: store.allTokens.count, isSelected: selectedGroup == nil && selectedEnv == nil && selectedType == nil) {
-                        selectedGroup = nil; selectedEnv = nil; selectedType = nil
-                    }
-                    sidebarItem("收藏", icon: "star.fill", count: store.allTokens.filter(\.isFavorite).count, isSelected: false) {
-                        selectedGroup = nil; selectedEnv = nil; selectedType = nil
-                        // Filter favorites
-                    }
+                    SidebarItem(label: "所有 Token", icon: "tray.full.fill",
+                                count: store.allTokens.count,
+                                isSelected: selectedGroup == nil && selectedEnv == nil && selectedType == nil,
+                                action: { selectedGroup = nil; selectedEnv = nil; selectedType = nil })
 
-                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
-
-                    // Environment filters
-                    SectionHeader("環境")
+                    // Environments
+                    SidebarSection("環境")
                     ForEach(TokenEnvironment.allCases, id: \.self) { env in
-                        sidebarItem(env.rawValue, icon: env.icon, count: store.allTokens.filter { $0.environment == env }.count, isSelected: selectedEnv == env) {
-                            selectedEnv = selectedEnv == env ? nil : env; selectedType = nil
-                        }
+                        let count = store.allTokens.filter { $0.environment == env }.count
+                        SidebarItem(label: env.rawValue, icon: env.icon, count: count,
+                                    isSelected: selectedEnv == env,
+                                    action: { selectedEnv = (selectedEnv == env) ? nil : env; selectedType = nil })
                     }
-
-                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
 
                     // Groups
-                    SectionHeader("分組")
-                    ForEach(store.groups) { group in
-                        sidebarItem(group.name, icon: group.icon, count: group.tokens.count, isSelected: selectedGroup == group) {
-                            selectedGroup = selectedGroup == group ? nil : group
+                    if !store.groups.isEmpty {
+                        SidebarSection("分組")
+                        ForEach(store.groups) { group in
+                            SidebarItem(label: group.name, icon: group.icon, count: group.tokens.count,
+                                        isSelected: selectedGroup == group,
+                                        action: { selectedGroup = (selectedGroup == group) ? nil : group })
                         }
                     }
 
-                    Divider().padding(.vertical, 4).padding(.horizontal, 12)
-
-                    // Type filters
-                    SectionHeader("類型")
+                    // Types
                     let usedTypes = Set(store.allTokens.map(\.tokenType))
-                    ForEach(TokenType.allCases.filter { usedTypes.contains($0) }, id: \.self) { type in
-                        sidebarItem(type.label, icon: type.icon, count: store.allTokens.filter { $0.tokenType == type }.count, isSelected: selectedType == type) {
-                            selectedType = selectedType == type ? nil : type
+                    if usedTypes.count > 1 {
+                        SidebarSection("類型")
+                        ForEach(TokenType.allCases.filter { usedTypes.contains($0) }, id: \.self) { type in
+                            let count = store.allTokens.filter { $0.tokenType == type }.count
+                            SidebarItem(label: type.label, icon: type.icon, count: count,
+                                        isSelected: selectedType == type,
+                                        action: { selectedType = (selectedType == type) ? nil : type })
                         }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 6)
             }
         }
-        .background(Color(.controlBackgroundColor).opacity(0.5))
+        .background(.bar)
     }
 
-    private func sidebarItem(_ label: String, icon: String, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon).font(.system(size: 11)).frame(width: 18).foregroundColor(isSelected ? .accentColor : .secondary)
-                Text(label).font(.system(size: 12)).lineLimit(1).foregroundColor(isSelected ? .primary : .secondary)
-                Spacer()
-                if count > 0 {
-                    Text("\(count)").font(.system(size: 10, design: .monospaced)).foregroundColor(.secondary.opacity(0.5))
-                }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
-            .contentShape(Rectangle())
+    private var brandIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 22, height: 22)
+            Image(systemName: "key.horizontal.fill").font(.system(size: 10, weight: .bold)).foregroundColor(.white)
         }
-        .buttonStyle(.plain)
+    }
+
+    // MARK: - Content
+
+    private var contentView: some View {
+        VStack(spacing: 0) {
+            DashboardBar(store: store)
+            toolbarView
+            Divider()
+            if tokens.isEmpty { emptyView } else { listView }
+        }
+        .background(Color(.controlBackgroundColor))
+        .overlay(alignment: .bottomTrailing) {
+            KeyboardHUD().padding(20)
+        }
     }
 
     // MARK: - Toolbar
 
-    private var toolbar: some View {
+    private var toolbarView: some View {
         HStack(spacing: 10) {
-            // Search
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundColor(.secondary.opacity(0.5)).font(.system(size: 11))
                 TextField("搜尋..." + (selectedEnv != nil ? " · \(selectedEnv!.rawValue)" : ""), text: $searchText)
@@ -160,16 +154,18 @@ struct MainView: View {
                 }
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
-            .background(.bar).cornerRadius(7)
+            .background(RoundedRectangle(cornerRadius: 7).fill(.bar))
+            .overlay(RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.06), lineWidth: 1))
 
-            // Quick env filter pills
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
                     ForEach(TokenEnvironment.allCases, id: \.self) { env in
                         Button { selectedEnv = selectedEnv == env ? nil : env } label: {
                             Text(env.rawValue).font(.system(size: 10, weight: .medium))
                                 .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(selectedEnv == env ? Capsule().fill(AnyShapeStyle(env.color.fg.swiftUIColor)) : Capsule().fill(AnyShapeStyle(.quaternary)))
+                                .background(selectedEnv == env
+                                    ? Capsule().fill(AnyShapeStyle(env.color.fg.swiftUIColor))
+                                    : Capsule().fill(AnyShapeStyle(.quaternary)))
                                 .foregroundColor(selectedEnv == env ? env.color.bg.swiftUIColor : .secondary)
                         }.buttonStyle(.plain)
                     }
@@ -178,36 +174,40 @@ struct MainView: View {
 
             Spacer()
 
+            Button { showImport = true } label: {
+                Image(systemName: "square.and.arrow.down").font(.system(size: 13)).foregroundColor(.secondary)
+            }.buttonStyle(.plain).help("導入 Token")
+
+            Button { showGenerator = true } label: {
+                Image(systemName: "wand.and.stars").font(.system(size: 13)).foregroundColor(.secondary)
+            }.buttonStyle(.plain).help("Token 產生器")
+
             Button { editingToken = nil; showAddToken = true } label: {
                 Image(systemName: "plus.circle.fill").font(.system(size: 16))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
             }.buttonStyle(.plain)
 
-            Button { showGenerator = true } label: {
-                Image(systemName: "wand.and.stars").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain)
-
             Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
                 Image(systemName: "gearshape").font(.system(size: 13)).foregroundColor(.secondary)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).help("設定")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
-    // MARK: - Token List
+    // MARK: - List
 
-    private var tokenList: some View {
+    private var listView: some View {
         ScrollView {
             LazyVStack(spacing: 6) {
                 ForEach(tokens) { token in
-                    HoppscotchCard(token: token, store: store) { editingToken = token }
+                    TokenCard(token: token, store: store) { editingToken = token }
                 }
             }
             .padding(14)
         }
     }
 
-    private var emptyState: some View {
+    private var emptyView: some View {
         VStack(spacing: 14) {
             Spacer()
             ZStack {
@@ -216,27 +216,53 @@ struct MainView: View {
             }
             Text(searchText.isEmpty ? "尚無 Token" : "無匹配").font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
             if searchText.isEmpty {
-                Button("新增 Token") { editingToken = nil; showAddToken = true }.buttonStyle(.borderedProminent).controlSize(.small)
+                HStack(spacing: 8) {
+                    Button("新增 Token") { editingToken = nil; showAddToken = true }.buttonStyle(.borderedProminent).controlSize(.small)
+                    Button("導入") { showImport = true }.buttonStyle(.bordered).controlSize(.small)
+                }
             }
             Spacer()
         }
     }
 }
 
-// MARK: - Helper Views
+// MARK: - Sidebar Components
 
-private struct SectionHeader: View {
+private struct SidebarItem: View {
+    let label: String; let icon: String; let count: Int
+    let isSelected: Bool; let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon).font(.system(size: 11)).frame(width: 18)
+                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                Text(label).font(.system(size: 12)).lineLimit(1)
+                    .foregroundColor(isSelected ? .primary : .secondary)
+                Spacer()
+                if count > 0 {
+                    Text("\(count)").font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.secondary.opacity(0.5))
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
+            .contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+}
+
+private struct SidebarSection: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
         Text(text).font(.system(size: 10, weight: .semibold)).foregroundColor(.secondary.opacity(0.5))
-            .padding(.horizontal, 12).padding(.top, 4)
+            .padding(.horizontal, 12).padding(.top, 6)
     }
 }
 
-// MARK: - Hoppscotch-Style Token Card
+// MARK: - Token Card (Hoppscotch style)
 
-struct HoppscotchCard: View {
+struct TokenCard: View {
     @ObservedObject var token: TokenItem
     @ObservedObject var store: DataStore
     let onEdit: () -> Void
@@ -247,34 +273,26 @@ struct HoppscotchCard: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Left color bar (token type)
             RoundedRectangle(cornerRadius: 2)
                 .fill(token.tokenType.color.swiftUIColor)
-                .frame(width: 3)
-                .padding(.vertical, 8)
+                .frame(width: 3).padding(.vertical, 8)
 
-            // Content
             HStack(spacing: 10) {
-                // Type icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 7)
                         .fill(token.tokenType.color.swiftUIColor.opacity(0.1))
                         .frame(width: 32, height: 32)
                     Image(systemName: token.tokenType.icon)
-                        .font(.system(size: 13))
-                        .foregroundColor(token.tokenType.color.swiftUIColor)
+                        .font(.system(size: 13)).foregroundColor(token.tokenType.color.swiftUIColor)
                 }
 
-                // Name + masked value
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(token.name).font(.system(size: 12.5, weight: .medium)).tracking(-0.15).lineLimit(1)
                         if token.isFavorite {
                             Image(systemName: "star.fill").font(.system(size: 9)).foregroundColor(.orange)
                         }
-                        // Environment pill
-                        Text(token.environment.rawValue)
-                            .font(.system(size: 8.5, weight: .bold))
+                        Text(token.environment.rawValue).font(.system(size: 8.5, weight: .bold))
                             .padding(.horizontal, 5).padding(.vertical, 1)
                             .background(Capsule().fill(token.envColor.opacity(0.12)))
                             .foregroundColor(token.envColor)
@@ -284,33 +302,28 @@ struct HoppscotchCard: View {
 
                 Spacer()
 
-                // Hover actions
                 if isHovering {
                     HStack(spacing: 4) {
-                        // Copy
                         Button {
                             (NSApp.delegate as? AppDelegate)?.copyToken(token)
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { copied = true }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { withAnimation { copied = false } }
                         } label: {
                             Image(systemName: copied ? "checkmark" : "doc.on.doc").font(.system(size: 11))
-                                .frame(width: 26, height: 26)
-                                .background(Circle().fill(copied ? Color.green.opacity(0.1) : Color.primary.opacity(0.04)))
+                                .frame(width: 26, height: 26).background(Circle().fill(copied ? Color.green.opacity(0.1) : Color.primary.opacity(0.04)))
                                 .foregroundColor(copied ? .green : .secondary)
-                        }.buttonStyle(.plain)
-                        .transition(.scale.combined(with: .opacity))
+                        }.buttonStyle(.plain).transition(.scale.combined(with: .opacity))
 
-                        // Edit
                         Button { onEdit() } label: {
                             Image(systemName: "pencil").font(.system(size: 10)).foregroundColor(.secondary)
                                 .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
                         }.buttonStyle(.plain)
 
-                        // More (context menu)
                         Menu {
                             Button { (NSApp.delegate as? AppDelegate)?.toggleFav(token) } label: {
                                 Label(token.isFavorite ? "取消收藏" : "收藏", systemImage: token.isFavorite ? "star.slash" : "star")
                             }
+                            Divider()
                             Button(role: .destructive) { (NSApp.delegate as? AppDelegate)?.deleteToken(token) } label: {
                                 Label("刪除", systemImage: "trash")
                             }
@@ -318,11 +331,9 @@ struct HoppscotchCard: View {
                             Image(systemName: "ellipsis").font(.system(size: 10)).foregroundColor(.secondary)
                                 .frame(width: 26, height: 26).background(Circle().fill(Color.primary.opacity(0.04)))
                         }.buttonStyle(.plain).menuIndicator(.hidden)
-                    }
-                    .animation(.easeOut(duration: 0.12), value: isHovering)
+                    }.animation(.easeOut(duration: 0.12), value: isHovering)
                 }
 
-                // Expiry badge
                 if token.isExpired {
                     Text("過期").font(.system(size: 8, weight: .bold)).foregroundColor(.red)
                         .padding(.horizontal, 5).padding(.vertical, 2).background(Capsule().fill(Color.red.opacity(0.1)))
@@ -333,23 +344,20 @@ struct HoppscotchCard: View {
             }
             .padding(.leading, 10).padding(.trailing, 10).padding(.vertical, 10)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isHovering ? Color.primary.opacity(0.03) : Color.clear)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(isHovering ? 0.06 : 0.02), lineWidth: 1))
-        )
+        .background(RoundedRectangle(cornerRadius: 8)
+            .fill(isHovering ? Color.primary.opacity(0.03) : Color.clear)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(isHovering ? 0.06 : 0.02), lineWidth: 1)))
         .scaleEffect(isPressed ? 0.985 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isPressed)
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering }
+        .onHover { hovering in withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering } }
+        .onTapGesture(count: 2) {
+            (NSApp.delegate as? AppDelegate)?.copyToken(token)
         }
         .onTapGesture {
             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) { isPressed = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
                 withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) { isPressed = false }
             }
-            // Double-click to copy
-            (NSApp.delegate as? AppDelegate)?.copyToken(token)
         }
     }
 }
