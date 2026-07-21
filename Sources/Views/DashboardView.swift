@@ -60,6 +60,15 @@ struct TokenGeneratorView: View {
                 Label("Token 工具箱", systemImage: "wand.and.stars")
                     .font(.system(size: 14, weight: .bold))
                 Spacer()
+                Button {
+                    NSApp.keyWindow?.close()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
 

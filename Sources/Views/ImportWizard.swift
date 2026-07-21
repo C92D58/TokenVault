@@ -58,6 +58,16 @@ struct ImportWizard: View {
             stepIndicator(1, "預覽確認")
             stepConnector(1)
             stepIndicator(2, "完成")
+            Spacer()
+            Button {
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.cancelAction)
         }
         .padding(.horizontal, 24).padding(.vertical, 16)
     }
