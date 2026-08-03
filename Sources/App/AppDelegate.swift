@@ -254,7 +254,6 @@ extension AppDelegate: NSApplicationDelegate {
                         movable: true, floating: true)
         lockWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        Task { await auth.authenticate() }
     }
 
     @objc private func appDidResignActive() {
@@ -275,7 +274,11 @@ extension AppDelegate: NSApplicationDelegate {
         auth.lock()
         NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         DispatchQueue.main.async { [weak self] in
-            if self?.auth.isLocked == true { self?.showLockScreen() }
+            if self?.auth.isLocked == true {
+                self?.showLockScreen()
+                // Auto-auth on idle-lock resume for seamless return
+                Task { await self?.auth.authenticate() }
+            }
         }
     }
 
