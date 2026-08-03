@@ -119,7 +119,7 @@ struct MainView: View {
                 .buttonStyle(.plain)
                 .focusEffectDisabled()
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 10)
 
             Divider().opacity(0.3)
 
@@ -252,7 +252,7 @@ struct MainView: View {
             // Search field — glass
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary.opacity(0.5))
+                    .foregroundColor(.secondary)
                     .font(.system(size: 11))
                 TextField("搜尋...", text: $searchText)
                     .textFieldStyle(.plain)
@@ -284,13 +284,13 @@ struct MainView: View {
 
                 // Active filter chips
                 if showFavorites {
-                    FilterChip(label: "⭐ 收藏") { showFavorites = false }
+                    FilterChip(icon: "star.fill", label: "收藏") { showFavorites = false }
                 }
                 if filterExpiringSoon {
-                    FilterChip(label: "⏰ 即將到期") { filterExpiringSoon = false }
+                    FilterChip(icon: "clock.badge.exclamationmark", label: "即將到期") { filterExpiringSoon = false }
                 }
                 if filterExpired {
-                    FilterChip(label: "❌ 已過期") { filterExpired = false }
+                    FilterChip(icon: "xmark.shield.fill", label: "已過期") { filterExpired = false }
                 }
             }
 
@@ -307,9 +307,9 @@ struct MainView: View {
                     }
                 }
             } label: {
-                HStack(spacing: 3) {
-                    Image(systemName: "arrow.up.arrow.down").font(.system(size: 10))
-                    Text(sortOrder.rawValue).font(.system(size: 10))
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.arrow.down").font(.system(size: 11))
+                    Text(sortOrder.rawValue).font(.system(size: 11))
                 }
                 .foregroundColor(.secondary)
             }
@@ -317,6 +317,12 @@ struct MainView: View {
             .help("排序方式").accessibilityLabel("排序方式")
 
             Spacer()
+
+            // Subtle visual separator between tools and actions
+            Rectangle()
+                .fill(Color.primary.opacity(0.10))
+                .frame(width: 1, height: 20)
+                .padding(.horizontal, 2)
 
             // Multi-select toggle
             if !showTrash && !tokens.isEmpty {
@@ -611,30 +617,33 @@ private struct SidebarSection: View {
     init(_ text: String) { self.text = text }
     var body: some View {
         Text(text)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundColor(.secondary.opacity(0.5))
-            .padding(.horizontal, 14).padding(.top, 8)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(.secondary)
+            .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 2)
     }
 }
 
 // MARK: - Active Filter Chip
 
 private struct FilterChip: View {
+    let icon: String
     let label: String
     let onRemove: () -> Void
 
-    init(label: String, onRemove: @escaping () -> Void) {
+    init(icon: String, label: String, onRemove: @escaping () -> Void) {
+        self.icon = icon
         self.label = label
         self.onRemove = onRemove
     }
 
     var body: some View {
         Button(action: onRemove) {
-            HStack(spacing: 3) {
-                Text(label).font(.system(size: 9, weight: .medium))
+            HStack(spacing: 4) {
+                Image(systemName: icon).font(.system(size: 9))
+                Text(label).font(.system(size: 10, weight: .medium))
                 Image(systemName: "xmark").font(.system(size: 7, weight: .bold))
             }
-            .padding(.horizontal, 6).padding(.vertical, 3)
+            .padding(.horizontal, 8).padding(.vertical, 4)
         }
         .buttonStyle(.plain).focusEffectDisabled()
         .background(Capsule().fill(DS.Color.accent.opacity(0.12)))
@@ -686,7 +695,7 @@ struct TokenCard: View {
     @State private var hasAppeared = false
     @AppStorage("hideSecrets") private var hideSecrets = true
 
-    private let cardHeight: CGFloat = 58
+    private let cardHeight: CGFloat = DS.Card.height
 
     var body: some View {
         HStack(spacing: 0) {
@@ -711,19 +720,19 @@ struct TokenCard: View {
                             colors: [token.tokenType.glassColor.swiftUIColor, token.tokenType.glassColor.swiftUIColor.opacity(0.4)],
                             startPoint: .top, endPoint: .bottom))
                 )
-                .frame(width: 3)
+                .frame(width: DS.Card.accentBarWidth)
                 .frame(maxHeight: .infinity)
                 .padding(.vertical, 5)
 
             // Service icon
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 9)
                     .fill(token.isDeleted
                         ? Color.gray.opacity(0.06)
                         : token.tokenType.glassColor.swiftUIColor.opacity(0.1))
-                    .frame(width: 34, height: 34)
+                    .frame(width: DS.Card.iconSize, height: DS.Card.iconSize)
                 Image(systemName: token.isDeleted ? "trash.fill" : token.tokenType.icon)
-                    .font(.system(size: 13))
+                    .font(.system(size: 14))
                     .foregroundColor(token.isDeleted ? .gray.opacity(0.5) : token.tokenType.glassColor.swiftUIColor)
             }
             .padding(.leading, 10)
@@ -802,7 +811,7 @@ struct TokenCard: View {
         if isMultiSelect {
             EmptyView()
         } else {
-            HStack(spacing: 2) {
+            HStack(spacing: 4) {
                 if token.isDeleted {
                     trailingBtn("arrow.uturn.backward", color: .blue) {
                         store.restoreToken(token)
@@ -850,7 +859,7 @@ struct TokenCard: View {
                     .frame(width: 28)
                 }
             }
-            .opacity(isHovering ? 1 : 0.55)
+            .opacity(isHovering ? 1 : 0.7)
             .animation(DS.Animation.easeOut, value: isHovering)
         }
     }
@@ -867,7 +876,7 @@ struct TokenCard: View {
                 )
         }
         .buttonStyle(.plain).focusEffectDisabled()
-        .opacity(isHovering ? 1.0 : 0.5)
+        .opacity(isHovering ? 1.0 : 0.7)
         .animation(DS.Animation.easeOut, value: isHovering)
     }
 

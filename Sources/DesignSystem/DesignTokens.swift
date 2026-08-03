@@ -139,9 +139,9 @@ enum DS {
     // MARK: - Card
 
     enum Card {
-        static let height: CGFloat = 56
-        static let accentBarWidth: CGFloat = 3
-        static let iconSize: CGFloat = 32
+        static let height: CGFloat = 64
+        static let accentBarWidth: CGFloat = 4
+        static let iconSize: CGFloat = 38
         static let cornerRadius: CGFloat = Radius.md
 
         // Elevation — Apple HIG: cards lift 2px on hover, do NOT scale.
