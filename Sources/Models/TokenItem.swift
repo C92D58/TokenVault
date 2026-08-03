@@ -28,7 +28,9 @@ enum TokenEnvironment: String, Codable, CaseIterable {
 // MARK: - Token Type
 
 enum TokenType: String, Codable, CaseIterable {
-    case github, gitlab, aws, openai, cloudflare, slack, stripe, tailscale, other
+    case github, gitlab, aws, openai, cloudflare, slack, stripe, tailscale
+    case deepseek, claude, gemini, azure, google, vercel, supabase, huggingface, discord
+    case other
 
     var label: String {
         switch self {
@@ -40,6 +42,15 @@ enum TokenType: String, Codable, CaseIterable {
         case .slack: return "Slack"
         case .stripe: return "Stripe"
         case .tailscale: return "Tailscale"
+        case .deepseek: return "DeepSeek"
+        case .claude: return "Claude"
+        case .gemini: return "Gemini"
+        case .azure: return "Azure"
+        case .google: return "Google Cloud"
+        case .vercel: return "Vercel"
+        case .supabase: return "Supabase"
+        case .huggingface: return "HuggingFace"
+        case .discord: return "Discord"
         case .other: return "其他"
         }
     }
@@ -53,6 +64,15 @@ enum TokenType: String, Codable, CaseIterable {
         case .slack: return "tag.fill"
         case .stripe: return "creditcard.fill"
         case .tailscale: return "point.3.connected.trianglepath.dotted"
+        case .deepseek: return "magnifyingglass.circle.fill"
+        case .claude: return "sparkles"
+        case .gemini: return "star.fill"
+        case .azure: return "building.2.fill"
+        case .google: return "g.circle.fill"
+        case .vercel: return "triangle.fill"
+        case .supabase: return "cylinder.fill"
+        case .huggingface: return "face.smiling.fill"
+        case .discord: return "message.fill"
         case .other: return "key.fill"
         }
     }
@@ -66,6 +86,15 @@ enum TokenType: String, Codable, CaseIterable {
         case .slack: return "#7C3AED"
         case .stripe: return "#635BFF"
         case .tailscale: return "#6B7280"
+        case .deepseek: return "#4F46E5"
+        case .claude: return "#D97706"
+        case .gemini: return "#4285F4"
+        case .azure: return "#0078D4"
+        case .google: return "#EA4335"
+        case .vercel: return "#171717"
+        case .supabase: return "#3ECF8E"
+        case .huggingface: return "#FFD21E"
+        case .discord: return "#5865F2"
         case .other: return "#9CA3AF"
         }
     }
@@ -81,6 +110,15 @@ enum TokenType: String, Codable, CaseIterable {
         case .slack: return "#6E34B8"
         case .stripe: return "#5850D8"
         case .tailscale: return "#6B7280"
+        case .deepseek: return "#4338CA"
+        case .claude: return "#C2600E"
+        case .gemini: return "#3B77E0"
+        case .azure: return "#006CBE"
+        case .google: return "#D4382B"
+        case .vercel: return "#333333"
+        case .supabase: return "#35B87A"
+        case .huggingface: return "#E0B800"
+        case .discord: return "#4E5AD8"
         case .other: return "#9CA3AF"
         }
     }
@@ -95,6 +133,15 @@ enum TokenType: String, Codable, CaseIterable {
         case .slack: return URL(string: "https://api.slack.com/apps")
         case .stripe: return URL(string: "https://dashboard.stripe.com/apikeys")
         case .tailscale: return URL(string: "https://login.tailscale.com/admin/settings/keys")
+        case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")
+        case .claude: return URL(string: "https://console.anthropic.com/keys")
+        case .gemini: return URL(string: "https://aistudio.google.com/apikey")
+        case .azure: return URL(string: "https://portal.azure.com/#view/Microsoft_AAD_IAM/TenantOverview.ReactView")
+        case .google: return URL(string: "https://console.cloud.google.com/apis/credentials")
+        case .vercel: return URL(string: "https://vercel.com/account/tokens")
+        case .supabase: return URL(string: "https://app.supabase.com/account/tokens")
+        case .huggingface: return URL(string: "https://huggingface.co/settings/tokens")
+        case .discord: return URL(string: "https://discord.com/developers/applications")
         case .other: return nil
         }
     }
@@ -102,12 +149,21 @@ enum TokenType: String, Codable, CaseIterable {
     /// Auto-detect from token prefix / name
     static func detect(from name: String, value: String) -> TokenType {
         let q = "\(name) \(value.prefix(12))".lowercased()
-        if q.contains("ghp_") || q.contains("github") { return .github }
+        if q.contains("ghp_") || q.contains("github") || q.contains("gho_") || q.contains("ghu_") { return .github }
         if q.contains("glpat-") || q.contains("gitlab") { return .gitlab }
         if q.contains("akia") || q.contains("aws") { return .aws }
+        if q.contains("sk-ant-") || q.contains("claude") || q.contains("anthropic") { return .claude }
+        if q.contains("gemini") || (q.contains("google") && q.contains("ai")) { return .gemini }
+        if q.contains("deepseek") { return .deepseek }
         if q.contains("sk-") || q.contains("openai") { return .openai }
+        if q.contains("azure") { return .azure }
+        if q.contains("google") || q.contains("gcp") { return .google }
         if q.contains("cloudflare") || q.contains("cf_") { return .cloudflare }
+        if q.contains("vercel") { return .vercel }
+        if q.contains("supabase") || q.contains("sb_") { return .supabase }
+        if q.contains("hf_") || q.contains("huggingface") { return .huggingface }
         if q.contains("xoxb-") || q.contains("slack") { return .slack }
+        if q.contains("discord") { return .discord }
         if q.contains("sk_live") || q.contains("sk_test") || q.contains("stripe") { return .stripe }
         if q.contains("tskey-") || q.contains("tailscale") { return .tailscale }
         return .other
