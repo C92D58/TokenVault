@@ -185,6 +185,7 @@ struct MainView: View {
             }
         }
         .background(.ultraThinMaterial)
+        .focusEffectDisabled()
     }
 
     private var brandIcon: some View {
@@ -215,6 +216,7 @@ struct MainView: View {
             Color(.windowBackgroundColor)
                 .overlay(.ultraThinMaterial.opacity(0.15))
         )
+        .focusEffectDisabled()
         .overlay(alignment: .bottomTrailing) {
             KeyboardHUD().padding(20)
         }
@@ -492,6 +494,7 @@ struct MainView: View {
             .padding(14)
         }
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.upArrow) {
             moveFocus(up: true)
             return .handled
