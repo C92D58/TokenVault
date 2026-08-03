@@ -24,12 +24,10 @@ struct ImportWizard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header with steps
             headerBar
 
             Divider()
 
-            // Content
             Group {
                 switch step {
                 case 0: stepSelectFile
@@ -40,13 +38,12 @@ struct ImportWizard: View {
             }
             .frame(maxHeight: .infinity)
 
-            // Footer
             if !importSuccess {
                 Divider()
                 footerButtons
             }
         }
-        .frame(width: 520, height: 440)
+        .frame(width: 540, height: 460)
     }
 
     // MARK: - Header
@@ -77,9 +74,10 @@ struct ImportWizard: View {
             ZStack {
                 if step > index {
                     Circle().fill(Color.green).frame(width: 24, height: 24)
-                    Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold)).foregroundColor(.white)
                 } else if step == index {
-                    Circle().fill(Color.accentColor).frame(width: 24, height: 24)
+                    Circle().fill(DS.Color.accent).frame(width: 24, height: 24)
                     Text("\(index + 1)").font(.system(size: 11, weight: .bold)).foregroundColor(.white)
                 } else {
                     Circle().stroke(.secondary.opacity(0.3), lineWidth: 2).frame(width: 24, height: 24)
@@ -105,33 +103,57 @@ struct ImportWizard: View {
         VStack(spacing: 20) {
             Spacer()
 
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
-                    .foregroundColor(.secondary.opacity(0.3))
-                    .frame(width: 260, height: 160)
+            Button {
+                selectFile()
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
+                        .foregroundColor(.secondary.opacity(0.3))
+                        .frame(width: 280, height: 170)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(.controlBackgroundColor))
+                        )
 
-                VStack(spacing: 12) {
-                    Image(systemName: "doc.badge.arrow.up")
-                        .font(.system(size: 36)).foregroundColor(.accentColor.opacity(0.6))
-                    Text("拖放檔案或點擊選擇").font(.system(size: 13)).foregroundColor(.secondary)
-                    Text("支援 .env / .csv / .json").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
+                    VStack(spacing: 12) {
+                        Image(systemName: "doc.badge.arrow.up")
+                            .font(.system(size: 38))
+                            .foregroundColor(DS.Color.accent.opacity(0.5))
+                        Text("點擊選擇檔案").font(.system(size: 13)).foregroundColor(.secondary)
+                        Text("支援 .env / .csv / .json").font(.system(size: 10))
+                            .foregroundColor(.secondary.opacity(0.5))
 
-                    if !fileName.isEmpty {
-                        HStack(spacing: 6) {
-                            Image(systemName: "doc.fill").font(.system(size: 12)).foregroundColor(.accentColor)
-                            Text(fileName).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                        if !fileName.isEmpty {
+                            HStack(spacing: 6) {
+                                Image(systemName: "doc.fill").font(.system(size: 12))
+                                    .foregroundColor(DS.Color.accent)
+                                Text(fileName).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                            }
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(RoundedRectangle(cornerRadius: 8)
+                                .fill(DS.Color.accent.opacity(0.08)))
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.08)))
                     }
                 }
-
-                Button("選擇檔案") {
-                    selectFile()
+            }
+            .buttonStyle(.plain).focusEffectDisabled()
+            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                if let p = providers.first {
+                    p.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { (urlData, _) in
+                        if let data = urlData as? Data,
+                           let path = String(data: data, encoding: .utf8),
+                           let url = URL(string: path),
+                           let content = try? String(contentsOf: url) {
+                            DispatchQueue.main.async {
+                                fileName = url.lastPathComponent
+                                fileContent = content
+                                parseContent()
+                            }
+                        }
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .opacity(0) // Invisible button on top
+                return true
             }
 
             // Quick paste option
@@ -140,8 +162,10 @@ struct ImportWizard: View {
                 TextEditor(text: $fileContent)
                     .font(.system(size: 9, design: .monospaced))
                     .frame(height: 60)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary, lineWidth: 1))
-                    .cornerRadius(8)
+                    .scrollContentBackground(.hidden)
+                    .padding(6)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.controlBackgroundColor)))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
                     .padding(.horizontal, 40)
 
                 Button("解析貼上的內容") {
@@ -159,9 +183,9 @@ struct ImportWizard: View {
 
     private var stepPreview: some View {
         VStack(spacing: 0) {
-            // Toolbar
             HStack {
-                Text("找到 \(parsedTokens.count) 個 Token").font(.system(size: 12, weight: .medium))
+                Text("找到 \(parsedTokens.count) 個 Token")
+                    .font(.system(size: 12, weight: .medium))
                 Spacer()
                 HStack(spacing: 8) {
                     Button("全選") {
@@ -173,11 +197,11 @@ struct ImportWizard: View {
                         for i in parsedTokens.indices { parsedTokens[i].selected = false }
                     }.buttonStyle(.bordered).controlSize(.small)
                 }
-            }.padding(.horizontal, 16).padding(.vertical, 8)
+            }
+            .padding(.horizontal, 16).padding(.vertical, 8)
 
             Divider()
 
-            // Token list
             ScrollView {
                 VStack(spacing: 4) {
                     ForEach(parsedTokens.indices, id: \.self) { i in
@@ -211,8 +235,8 @@ struct ImportWizard: View {
                 typePill(token.type)
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary.opacity(0.5)))
+        .padding(.horizontal, 10).padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.controlBackgroundColor)))
     }
 
     private func envPill(_ env: TokenEnvironment) -> some View {
@@ -233,12 +257,12 @@ struct ImportWizard: View {
     // MARK: - Step 2: Result
 
     private var stepResult: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             Spacer()
 
             ZStack {
-                Circle().fill(Color.green.opacity(0.1)).frame(width: 72, height: 72)
-                Image(systemName: "checkmark.circle.fill").font(.system(size: 40)).foregroundColor(.green)
+                Circle().fill(Color.green.opacity(0.1)).frame(width: 80, height: 80)
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 44)).foregroundColor(.green)
             }
 
             Text("導入完成").font(.system(size: 18, weight: .bold))
@@ -299,7 +323,6 @@ struct ImportWizard: View {
 
         var tokens: [ParsedToken] = []
 
-        // Try .env format first
         if text.contains("=") && !text.hasPrefix("{") && !text.hasPrefix("[") {
             tokens = ImportExportHelper.parseEnv(text).map {
                 ParsedToken(name: $0.name, value: $0.value, note: $0.note,
@@ -307,7 +330,6 @@ struct ImportWizard: View {
             }
         }
 
-        // Try CSV
         if tokens.isEmpty && text.contains(",") {
             tokens = ImportExportHelper.parseCSV(text).map {
                 ParsedToken(name: $0.name, value: $0.value, note: $0.note,
@@ -315,7 +337,6 @@ struct ImportWizard: View {
             }
         }
 
-        // Try JSON (TokenVault backup)
         if tokens.isEmpty && (text.hasPrefix("{") || text.hasPrefix("[")) {
             if let data = text.data(using: .utf8),
                let snap = try? JSONDecoder().decode(DataStore.BackupSnapshot.self, from: data) {
@@ -326,7 +347,6 @@ struct ImportWizard: View {
             }
         }
 
-        // Fallback: line by line as "name:value"
         if tokens.isEmpty {
             tokens = text.components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespaces) }

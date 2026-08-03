@@ -12,153 +12,207 @@ struct SettingsView: View {
             generalTab.tabItem { Label("一般", systemImage: "gearshape") }
             syncTab.tabItem { Label("同步", systemImage: "arrow.triangle.capsulepath") }
             securityTab.tabItem { Label("安全", systemImage: "lock.shield") }
+            logTab.tabItem { Label("記錄", systemImage: "list.bullet.rectangle") }
         }
-        .frame(minWidth: 420, minHeight: 380)
+        .frame(minWidth: 500, minHeight: 500)
     }
 
     // MARK: - General
 
     private var generalTab: some View {
-        Form {
-            Section {
-                Picker("外觀", selection: $settings.appearanceMode) {
-                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+        ScrollView {
+            Form {
+                Section {
+                    Picker("外觀", selection: $settings.appearanceMode) {
+                        ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .onChange(of: settings.appearanceMode) { _, _ in settings.applyAppearance() }
+                } header: {
+                    Text("外觀").font(.system(size: 11, weight: .semibold))
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: settings.appearanceMode) { _, _ in settings.applyAppearance() }
-            } header: {
-                Text("外觀").font(.system(size: 11, weight: .semibold))
-            }
 
-            Section {
-                Toggle("自動鎖定", isOn: $settings.autoLockEnabled)
-                if settings.autoLockEnabled {
-                    Picker("閒置鎖定", selection: $settings.autoLockSeconds) {
+                Section {
+                    Toggle("自動鎖定", isOn: $settings.autoLockEnabled)
+                    if settings.autoLockEnabled {
+                        Picker("閒置鎖定", selection: $settings.autoLockSeconds) {
+                            Text("30 秒").tag(30)
+                            Text("1 分鐘").tag(60)
+                            Text("5 分鐘").tag(300)
+                            Text("15 分鐘").tag(900)
+                        }
+                    }
+                } header: {
+                    Text("隱私").font(.system(size: 11, weight: .semibold))
+                }
+
+                Section {
+                    Picker("剪貼板清空", selection: $settings.clipboardClearSeconds) {
+                        Text("15 秒").tag(15)
                         Text("30 秒").tag(30)
-                        Text("1 分鐘").tag(60)
-                        Text("5 分鐘").tag(300)
-                        Text("15 分鐘").tag(900)
+                        Text("45 秒").tag(45)
+                        Text("永不").tag(0)
                     }
+                } header: {
+                    Text("剪貼板").font(.system(size: 11, weight: .semibold))
                 }
-            } header: {
-                Text("隱私").font(.system(size: 11, weight: .semibold))
             }
-
-            Section {
-                Picker("剪貼板清空", selection: $settings.clipboardClearSeconds) {
-                    Text("15 秒").tag(15)
-                    Text("30 秒").tag(30)
-                    Text("45 秒").tag(45)
-                    Text("永不").tag(0)
-                }
-            } header: {
-                Text("剪貼板").font(.system(size: 11, weight: .semibold))
-            }
+            .formStyle(.grouped)
         }
-        .formStyle(.grouped)
     }
 
     // MARK: - Sync
 
     private var syncTab: some View {
-        Form {
-            Section {
-                Toggle("iCloud 同步", isOn: $settings.useICloud)
-                Text("開啟後數據自動同步到 iCloud Drive，所有 Apple 裝置共享。數據已 AES-256 加密。")
-                    .font(.system(size: 10)).foregroundColor(.secondary)
-            } header: {
-                Text("iCloud").font(.system(size: 11, weight: .semibold))
-            }
-
-            Section {
-                Toggle("GitHub 備份", isOn: $settings.githubSyncEnabled)
-                if settings.githubSyncEnabled {
-                    TextField("倉庫 (user/repo)", text: $settings.githubRepo)
-                        .textFieldStyle(.roundedBorder).font(.system(size: 12))
-                        .frame(width: 200)
-
-                    HStack {
-                        Button("設定 Token") { showGHSetup = true }
-                            .buttonStyle(.bordered).controlSize(.small)
-                        if !syncMessage.isEmpty {
-                            Text(syncMessage)
-                                .font(.system(size: 10)).foregroundColor(syncMessage.contains("✅") ? .green : .red)
-                        }
-                    }
-
-                    Button {
-                        syncToGitHub()
-                    } label: {
-                        Label(syncing ? "同步中..." : "立即同步", systemImage: "arrow.triangle.capsulepath")
-                    }
-                    .buttonStyle(.bordered).controlSize(.small)
-                    .disabled(syncing || settings.githubRepo.isEmpty)
-
-                    Text("Token 已 AES-256 加密，即使 GitHub 倉庫公開也無法被讀取。")
+        ScrollView {
+            Form {
+                Section {
+                    Toggle("iCloud 同步", isOn: $settings.useICloud)
+                    Text("開啟後數據自動同步到 iCloud Drive，所有 Apple 裝置共享。數據已 AES-256 加密。")
                         .font(.system(size: 10)).foregroundColor(.secondary)
+                } header: {
+                    Text("iCloud").font(.system(size: 11, weight: .semibold))
                 }
-            } header: {
-                Text("GitHub").font(.system(size: 11, weight: .semibold))
+
+                Section {
+                    Toggle("GitHub 備份", isOn: $settings.githubSyncEnabled)
+                    if settings.githubSyncEnabled {
+                        TextField("倉庫 (user/repo)", text: $settings.githubRepo)
+                            .textFieldStyle(.roundedBorder).font(.system(size: 12))
+                            .frame(width: 200)
+
+                        HStack {
+                            Button("設定 Token") { showGHSetup = true }
+                                .buttonStyle(.bordered).controlSize(.small)
+                            if !syncMessage.isEmpty {
+                                Text(syncMessage)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(syncMessage.contains("✅") ? .green : .red)
+                            }
+                        }
+
+                        Button {
+                            syncToGitHub()
+                        } label: {
+                            Label(syncing ? "同步中..." : "立即同步", systemImage: "arrow.triangle.capsulepath")
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .disabled(syncing || settings.githubRepo.isEmpty)
+
+                        Text("Token 已 AES-256 加密，即使 GitHub 倉庫公開也無法被讀取。")
+                            .font(.system(size: 10)).foregroundColor(.secondary)
+                    }
+                } header: {
+                    Text("GitHub").font(.system(size: 11, weight: .semibold))
+                }
             }
+            .formStyle(.grouped)
         }
-        .formStyle(.grouped)
         .sheet(isPresented: $showGHSetup) {
-            VStack(spacing: 16) {
+            VStack(spacing: 18) {
                 Text("GitHub Token").font(.system(size: 15, weight: .bold))
                 Text("需要 repo 寫入權限").font(.system(size: 11)).foregroundColor(.secondary)
-                SecureField("ghp_...", text: $ghToken).textFieldStyle(.roundedBorder).frame(width: 260)
+                SecureField("ghp_...", text: $ghToken)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 260)
                 HStack {
                     Button("取消") { showGHSetup = false }
                     Button("儲存") {
-                        // Store GH token in Keychain
                         let tag = "org.wahsun.tokenvault.ghtoken".data(using: .utf8)!
                         try? KeychainService.write(tag: tag, data: Data(ghToken.utf8))
                         showGHSetup = false
-                    }.buttonStyle(.borderedProminent).disabled(ghToken.isEmpty)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(ghToken.isEmpty)
                 }
-            }.padding().frame(width: 320, height: 180)
+            }
+            .padding().frame(width: 320, height: 200)
         }
     }
 
     // MARK: - Security
 
     private var securityTab: some View {
-        Form {
-            Section {
-                HStack {
-                    Text("加密狀態")
-                    Spacer()
-                    Label("AES-256-GCM", systemImage: "checkmark.shield.fill")
-                        .font(.system(size: 11)).foregroundColor(.green)
+        ScrollView {
+            Form {
+                Section {
+                    HStack {
+                        Text("加密狀態")
+                        Spacer()
+                        Label("AES-256-GCM", systemImage: "checkmark.shield.fill")
+                            .font(.system(size: 11)).foregroundColor(.green)
+                    }
+                    HStack {
+                        Text("主密鑰")
+                        Spacer()
+                        Label("Secure Enclave", systemImage: "checkmark.shield.fill")
+                            .font(.system(size: 11)).foregroundColor(.green)
+                    }
+                    HStack {
+                        Text("儲存位置")
+                        Spacer()
+                        Text(settings.useICloud ? "iCloud Drive" : "本機")
+                            .font(.system(size: 11)).foregroundColor(.secondary)
+                    }
+                } header: {
+                    Text("安全資訊").font(.system(size: 11, weight: .semibold))
                 }
-                HStack {
-                    Text("主密鑰")
-                    Spacer()
-                    Label("Secure Enclave", systemImage: "checkmark.shield.fill")
-                        .font(.system(size: 11)).foregroundColor(.green)
-                }
-                HStack {
-                    Text("儲存位置")
-                    Spacer()
-                    Text(settings.useICloud ? "iCloud Drive" : "本機")
-                        .font(.system(size: 11)).foregroundColor(.secondary)
-                }
-            } header: {
-                Text("安全資訊").font(.system(size: 11, weight: .semibold))
-            }
 
-            Section {
-                Button("匯出加密備份") { exportBackup() }
-                    .buttonStyle(.bordered).controlSize(.small)
-                Button("匯入備份") { importBackup() }
-                    .buttonStyle(.bordered).controlSize(.small)
-            } header: {
-                Text("備份").font(.system(size: 11, weight: .semibold))
+                Section {
+                    Button("匯出加密備份 (JSON)") { exportBackup(format: "json") }
+                        .buttonStyle(.bordered).controlSize(.small)
+                    Button("匯出 .env") { exportBackup(format: "env") }
+                        .buttonStyle(.bordered).controlSize(.small)
+                    Button("匯出 CSV") { exportBackup(format: "csv") }
+                        .buttonStyle(.bordered).controlSize(.small)
+                    Button("匯入備份") { importBackup() }
+                        .buttonStyle(.bordered).controlSize(.small)
+                } header: {
+                    Text("備份").font(.system(size: 11, weight: .semibold))
+                }
             }
+            .formStyle(.grouped)
         }
-        .formStyle(.grouped)
+    }
+
+    // MARK: - Security Log
+
+    private var logTab: some View {
+        @ObservedObject var logService = SecurityLogService.shared
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if logService.entries.isEmpty {
+                    VStack(spacing: 12) {
+                        Spacer().frame(height: 60)
+                        Image(systemName: "list.bullet.rectangle").font(.system(size: 28)).foregroundColor(.secondary.opacity(0.3))
+                        Text("尚無操作記錄").font(.system(size: 13)).foregroundColor(.secondary)
+                        Text("所有 Secret 操作將自動記錄於此").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.5))
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    ForEach(logService.entries.prefix(50)) { entry in
+                        HStack(spacing: 10) {
+                            Image(systemName: entry.action.icon)
+                                .font(.system(size: 11))
+                                .foregroundColor(entry.action == .copied ? .blue : .secondary)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("\(entry.action.rawValue)「\(entry.secretName)」").font(.system(size: 12))
+                                Text("\(entry.provider) · \(entry.relativeTime)")
+                                    .font(.system(size: 9)).foregroundColor(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+        }
     }
 
     // MARK: - Actions
@@ -177,7 +231,7 @@ struct SettingsView: View {
             }
 
             guard let d = await MainActor.run(body: { NSApp.delegate as? AppDelegate }) else { return }
-            let snap = DataStore.BackupSnapshot(groups: d.store.groups, tokens: d.store.allTokens)
+            let snap = DataStore.BackupSnapshot(groups: d.store.groups, tokens: d.store.activeTokens)
             let content = (try? JSONEncoder().encode(snap))?.base64EncodedString() ?? ""
 
             guard let url = URL(string: "https://api.github.com/repos/\(repo)/contents/tokenvault-backup.json") else {
@@ -205,15 +259,39 @@ struct SettingsView: View {
         }
     }
 
-    private func exportBackup() {
+    private func exportBackup(format: String = "json") {
         guard let d = NSApp.delegate as? AppDelegate else { return }
-        let snap = DataStore.BackupSnapshot(groups: d.store.groups, tokens: d.store.allTokens)
-        let data = (try? JSONEncoder().encode(snap)) ?? Data()
+        let tokens = d.store.activeTokens
         let savePanel = NSSavePanel()
-        savePanel.nameFieldStringValue = "tokenvault-backup-\(Date().formatted(date: .abbreviated, time: .omitted)).json"
-        savePanel.allowedContentTypes = [.json]
-        savePanel.begin { response in
-            if response == .OK, let url = savePanel.url { try? data.write(to: url) }
+
+        switch format {
+        case "env":
+            savePanel.nameFieldStringValue = "tokenvault-\(Date().formatted(date: .abbreviated, time: .omitted)).env"
+            savePanel.allowedContentTypes = [.plainText]
+            savePanel.begin { response in
+                if response == .OK, let url = savePanel.url {
+                    let content = ImportExportHelper.exportEnv(tokens)
+                    try? content.write(to: url, atomically: true, encoding: .utf8)
+                }
+            }
+        case "csv":
+            savePanel.nameFieldStringValue = "tokenvault-\(Date().formatted(date: .abbreviated, time: .omitted)).csv"
+            savePanel.allowedContentTypes = [.commaSeparatedText]
+            savePanel.begin { response in
+                if response == .OK, let url = savePanel.url {
+                    let content = ImportExportHelper.exportCSV(tokens)
+                    try? content.write(to: url, atomically: true, encoding: .utf8)
+                }
+            }
+        default:
+            savePanel.nameFieldStringValue = "tokenvault-backup-\(Date().formatted(date: .abbreviated, time: .omitted)).json"
+            savePanel.allowedContentTypes = [.json]
+            savePanel.begin { response in
+                if response == .OK, let url = savePanel.url {
+                    let snap = DataStore.BackupSnapshot(groups: d.store.groups, tokens: d.store.allTokens)
+                    if let data = try? JSONEncoder().encode(snap) { try? data.write(to: url) }
+                }
+            }
         }
     }
 
@@ -226,8 +304,14 @@ struct SettingsView: View {
             DispatchQueue.main.async {
                 guard let d = NSApp.delegate as? AppDelegate,
                       let snap = try? JSONDecoder().decode(DataStore.BackupSnapshot.self, from: data) else { return }
-                d.store.groups = snap.groups
-                d.store.allTokens = snap.tokens
+                let existingIDs = Set(d.store.allTokens.map(\.id))
+                for token in snap.tokens where !existingIDs.contains(token.id) {
+                    d.store.addToken(token, to: nil)
+                }
+                let existingGroupIDs = Set(d.store.groups.map(\.id))
+                for group in snap.groups where !existingGroupIDs.contains(group.id) {
+                    d.store.groups.append(group)
+                }
                 d.store.save()
             }
         }

@@ -8,8 +8,10 @@ struct KeyboardHUD: View {
     var body: some View {
         Group {
             if isVisible {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("快捷鍵").font(.system(size: 11, weight: .bold)).foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("快捷鍵")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
 
                     shortcutRow("⌘N", "新增 Token")
                     shortcutRow("⇧⌘N", "新增分組")
@@ -26,32 +28,38 @@ struct KeyboardHUD: View {
                     HStack {
                         Image(systemName: "hand.tap.fill").font(.system(size: 9))
                         Text("按住 ⌘ 顯示此面板").font(.system(size: 9))
-                    }.foregroundColor(.secondary.opacity(0.5))
+                    }
+                    .foregroundColor(.secondary.opacity(0.5))
                 }
-                .padding(14)
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.08), lineWidth: 1))
-                .shadow(color: .black.opacity(0.15), radius: 20, y: 8)
+                .padding(16)
+                .background(Color(.controlBackgroundColor))
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.15), radius: 24, y: 10)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
                 .zIndex(999)
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isVisible)
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: isVisible)
         .onAppear {
-            NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
+            _ = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
                 if event.modifierFlags.contains(.command) {
                     if cmdHeldSince == nil { cmdHeldSince = Date() }
                 } else {
                     cmdHeldSince = nil
-                    withAnimation { isVisible = false }
+                    isVisible = false
                 }
                 return event
             }
-            // Timer to check if ⌘ held > 1.5s
-            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { t in
                 if let since = cmdHeldSince, Date().timeIntervalSince(since) > 1.5 {
-                    withAnimation { isVisible = true }
+                    isVisible = true
+                }
+                if cmdHeldSince == nil && !isVisible {
+                    // timer continues; cheap
                 }
             }
         }

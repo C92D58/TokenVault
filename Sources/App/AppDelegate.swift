@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, ObservableObject {
     private var popover: NSPopover!
     private var mainWindow: NSWindow?
     private var lockWindow: NSWindow?
+    private var aboutWindow: NSWindow?
     private var settingsWindow: NSWindow?
     private var helpWindow: NSWindow?
     private var lastUnlockTime = Date.distantPast
@@ -27,6 +28,9 @@ final class AppDelegate: NSObject, ObservableObject {
 // MARK: - Shared Actions
 
 extension AppDelegate {
+    @objc func undoAction() { store.undoManager.undo() }
+    @objc func redoAction() { store.undoManager.redo() }
+
     @objc func newToken() {
         showMainContent()
         NotificationCenter.default.post(name: .showAddToken, object: nil)
@@ -35,13 +39,17 @@ extension AppDelegate {
         showMainContent()
         NotificationCenter.default.post(name: .showAddGroup, object: nil)
     }
-    @objc func lockApp() { idleTimer?.invalidate(); idleTimer = nil; auth.lock(); showLockScreen() }
+    @objc func lockApp() {
+        idleTimer?.invalidate(); idleTimer = nil; auth.lock(); showLockScreen()
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
+    }
     func toggleFav(_ token: TokenItem) { store.toggleFav(token); store.save() }
     func deleteToken(_ token: TokenItem) { store.deleteToken(token) }
     func copyToken(_ token: TokenItem) {
         let value = token.decryptedValue()
         ClipboardService.shared.copy(value, clearAfter: TimeInterval(settings.clipboardClearSeconds))
-        token.copyCount += 1; store.save()
+        store.useToken(token)
+        ToastService.shared.show("已複製「\(token.name)」", icon: "doc.on.clipboard")
 #if os(macOS)
         NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
 #endif
@@ -67,6 +75,10 @@ extension AppDelegate: NSApplicationDelegate {
         setupGlobalHotkey()
         buildMenu()
         showLockScreen()
+
+        // Notifications
+        NotificationService.requestPermission()
+        NotificationService.scheduleExpiryReminders(for: store.allTokens)
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(appDidResignActive),
@@ -95,7 +107,7 @@ extension AppDelegate: NSApplicationDelegate {
         app.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         main.addItem({ let i = NSMenuItem(); i.submenu = app; return i }())
 
-        let file = NSMenu(title: "File")
+        let file = NSMenu(title: "檔案")
         file.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
         file.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
         file.addItem(.separator())
@@ -103,7 +115,12 @@ extension AppDelegate: NSApplicationDelegate {
         file.addItem(NSMenuItem(title: "匯出備份...", action: #selector(exportBackup), keyEquivalent: "e"))
         main.addItem({ let i = NSMenuItem(); i.submenu = file; return i }())
 
-        let help = NSMenu(title: "Help")
+        let edit = NSMenu(title: "編輯")
+        edit.addItem(NSMenuItem(title: "還原", action: #selector(undoAction), keyEquivalent: "z"))
+        edit.addItem(NSMenuItem(title: "重做", action: #selector(redoAction), keyEquivalent: "Z"))
+        main.addItem({ let i = NSMenuItem(); i.submenu = edit; return i }())
+
+        let help = NSMenu(title: "輔助說明")
         help.addItem(NSMenuItem(title: "TokenVault 說明", action: #selector(showHelp), keyEquivalent: "?"))
         main.addItem({ let i = NSMenuItem(); i.submenu = help; return i }())
         NSApplication.shared.mainMenu = main
@@ -128,8 +145,9 @@ extension AppDelegate: NSApplicationDelegate {
         statusItem.menu = menu
 
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 340, height: 460)
+        popover.contentSize = NSSize(width: 360, height: 480)
         popover.behavior = .transient
+        popover.animates = true
         popover.contentViewController = NSHostingController(rootView: PopoverView(store: store))
     }
 
@@ -141,15 +159,37 @@ extension AppDelegate: NSApplicationDelegate {
 
     // ── Windows ──
 
+    /// Standard window configuration with solid background.
+    private func applyGlassStyle(_ window: NSWindow?, title: String, size: NSSize,
+                                  minSize: NSSize? = nil, movable: Bool = false,
+                                  floating: Bool = false, fullSize: Bool = true) {
+        guard let w = window else { return }
+        w.title = title
+        w.setContentSize(size)
+        if let m = minSize { w.minSize = m }
+        w.titlebarAppearsTransparent = true
+        w.isReleasedWhenClosed = false
+        w.isMovableByWindowBackground = movable
+        w.backgroundColor = .windowBackgroundColor
+        w.isOpaque = true
+        w.hasShadow = true
+        if floating { w.level = .floating }
+        if fullSize {
+            w.styleMask.insert(.fullSizeContentView)
+        } else {
+            w.styleMask.remove(.fullSizeContentView)
+        }
+        w.center()
+    }
+
     private func setupMainWindow() {
         let hosting = NSHostingController(rootView: MainView(store: store))
         mainWindow = NSWindow(contentViewController: hosting)
-        mainWindow?.title = "TokenVault"
-        mainWindow?.setContentSize(NSSize(width: 780, height: 640))
-        mainWindow?.minSize = NSSize(width: 600, height: 480)
         mainWindow?.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
-        mainWindow?.center(); mainWindow?.setFrameAutosaveName("TokenVaultMain")
-        mainWindow?.titlebarAppearsTransparent = true; mainWindow?.isReleasedWhenClosed = false
+        applyGlassStyle(mainWindow, title: "TokenVault",
+                        size: NSSize(width: 900, height: 680),
+                        minSize: NSSize(width: 640, height: 500))
+        mainWindow?.setFrameAutosaveName("TokenVaultMain")
     }
 
     @objc func showMainContent() {
@@ -160,9 +200,11 @@ extension AppDelegate: NSApplicationDelegate {
     @objc func showSettings() {
         if settingsWindow == nil {
             settingsWindow = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
-            settingsWindow?.title = "設定"; settingsWindow?.styleMask = [.titled, .closable]
-            settingsWindow?.setContentSize(NSSize(width: 440, height: 400))
-            settingsWindow?.isReleasedWhenClosed = false; settingsWindow?.center()
+            settingsWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
+            applyGlassStyle(settingsWindow, title: "設定",
+                            size: NSSize(width: 480, height: 520),
+                            minSize: NSSize(width: 440, height: 440))
+            settingsWindow?.setFrameAutosaveName("TokenVaultSettings")
         }
         NSApp.activate(ignoringOtherApps: true); settingsWindow?.makeKeyAndOrderFront(nil)
     }
@@ -170,18 +212,25 @@ extension AppDelegate: NSApplicationDelegate {
     @objc private func showHelp() {
         if helpWindow == nil {
             helpWindow = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
-            helpWindow?.title = "TokenVault 說明"; helpWindow?.styleMask = [.titled, .closable]
-            helpWindow?.setContentSize(NSSize(width: 500, height: 460))
-            helpWindow?.isReleasedWhenClosed = false; helpWindow?.center()
+            helpWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
+            applyGlassStyle(helpWindow, title: "TokenVault 說明",
+                            size: NSSize(width: 520, height: 500),
+                            minSize: NSSize(width: 480, height: 420))
+            helpWindow?.setFrameAutosaveName("TokenVaultHelp")
         }
         NSApp.activate(ignoringOtherApps: true); helpWindow?.makeKeyAndOrderFront(nil)
     }
 
     @objc func showAbout() {
-        let win = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
-        win.title = "關於 TokenVault"; win.styleMask = [.titled, .closable]
-        win.setContentSize(NSSize(width: 360, height: 420)); win.center(); win.isReleasedWhenClosed = false
-        NSApp.activate(ignoringOtherApps: true); win.makeKeyAndOrderFront(nil)
+        if aboutWindow == nil {
+            let win = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
+            win.styleMask = [.titled, .closable, .fullSizeContentView]
+            aboutWindow = win
+            applyGlassStyle(aboutWindow, title: "關於 TokenVault",
+                            size: NSSize(width: 380, height: 420))
+            aboutWindow?.setFrameAutosaveName("TokenVaultAbout")
+        }
+        NSApp.activate(ignoringOtherApps: true); aboutWindow?.makeKeyAndOrderFront(nil)
     }
 
     // ── Lock Screen ──
@@ -193,10 +242,10 @@ extension AppDelegate: NSApplicationDelegate {
         }
         lockWindow?.close()
         lockWindow = NSWindow(contentViewController: NSHostingController(rootView: lockView))
-        lockWindow?.title = "TokenVault"; lockWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
-        lockWindow?.setContentSize(NSSize(width: 400, height: 480))
-        lockWindow?.titlebarAppearsTransparent = true; lockWindow?.isMovableByWindowBackground = true
-        lockWindow?.center(); lockWindow?.isReleasedWhenClosed = false; lockWindow?.level = .floating
+        lockWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
+        applyGlassStyle(lockWindow, title: "TokenVault",
+                        size: NSSize(width: 420, height: 520),
+                        movable: true, floating: true)
         lockWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         Task { await auth.authenticate() }
@@ -218,6 +267,7 @@ extension AppDelegate: NSApplicationDelegate {
     private func performLock() {
         guard lockWindow == nil else { return }
         auth.lock()
+        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
         DispatchQueue.main.async { [weak self] in
             if self?.auth.isLocked == true { self?.showLockScreen() }
         }
@@ -228,11 +278,23 @@ extension AppDelegate: NSApplicationDelegate {
     @objc func exportBackup() {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = "tokenvault-backup-\(Date().formatted(date: .abbreviated, time: .omitted)).json"
-        panel.allowedContentTypes = [.json]
+        panel.allowedContentTypes = [.json, .plainText, .commaSeparatedText]
         panel.begin { [weak self] r in
             guard let self, r == .OK, let url = panel.url else { return }
-            let snap = DataStore.BackupSnapshot(groups: store.groups, tokens: store.allTokens)
-            if let d = try? JSONEncoder().encode(snap) { try? d.write(to: url) }
+            let tokens = store.activeTokens
+            let ext = url.pathExtension.lowercased()
+            let content: String
+            if ext == "csv" {
+                content = ImportExportHelper.exportCSV(tokens)
+            } else if ext == "env" || ext == "txt" {
+                content = ImportExportHelper.exportEnv(tokens)
+            } else {
+                // JSON backup (default)
+                let snap = DataStore.BackupSnapshot(groups: store.groups, tokens: store.allTokens)
+                if let d = try? JSONEncoder().encode(snap) { try? d.write(to: url); return }
+                return
+            }
+            try? content.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 
@@ -259,7 +321,7 @@ extension AppDelegate: NSApplicationDelegate {
 
     private func setupGlobalHotkey() {
         var ref: EventHotKeyRef?
-        var gid = EventHotKeyID(signature: 0x544B5654, id: 1)
+        let gid = EventHotKeyID(signature: 0x544B5654, id: 1)
         RegisterEventHotKey(UInt32(kVK_ANSI_T), UInt32(cmdKey | shiftKey), gid, GetApplicationEventTarget(), 0, &ref)
         var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         InstallEventHandler(GetApplicationEventTarget(), { _, event, _ in
@@ -268,9 +330,13 @@ extension AppDelegate: NSApplicationDelegate {
                 nil, MemoryLayout<EventHotKeyID>.size, nil, &hid)
             if hid.id == 1 {
                 DispatchQueue.main.async {
-                    guard let d = NSApp.delegate as? AppDelegate, !d.auth.isLocked,
-                          let t = d.store.allTokens.sorted(by: { $0.copyCount > $1.copyCount }).first
-                    else { return }
+                    guard let d = NSApp.delegate as? AppDelegate, !d.auth.isLocked else { return }
+                    let token = d.store.activeTokens
+                        .filter { $0.isFavorite }
+                        .sorted(by: { ($0.lastUsedAt ?? .distantPast) > ($1.lastUsedAt ?? .distantPast) }).first
+                        ?? d.store.activeTokens
+                        .sorted(by: { ($0.lastUsedAt ?? .distantPast) > ($1.lastUsedAt ?? .distantPast) }).first
+                    guard let t = token else { return }
                     d.copyToken(t)
                 }
             }

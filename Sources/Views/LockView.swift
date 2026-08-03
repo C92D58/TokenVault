@@ -7,61 +7,81 @@ struct LockView: View {
     @State private var pulse = false
     @State private var appear = false
     @State private var isActive = true
-
-    private let gradient = LinearGradient(
-        colors: [Color(red: 0.65, green: 0.55, blue: 0.98), Color(red: 0.45, green: 0.35, blue: 0.85)],
-        startPoint: .topLeading, endPoint: .bottomTrailing
-    )
+    @State private var glowRotation: Double = 0
 
     var body: some View {
         ZStack {
+            // Solid gradient background with particles
+            DS.Color.accentGradientSubtle
             Color(.controlBackgroundColor)
-            gradient.opacity(0.04)
+            ParticleField(count: 20, color: DS.Color.accentLight)
 
             VStack(spacing: 0) {
                 Spacer()
 
-                // Shield icon
+                // Shield icon — thick glass
                 ZStack {
-                    Circle().fill(gradient.opacity(0.08)).frame(width: 100, height: 100)
-                        .scaleEffect(pulse && isActive ? 1.12 : 1.0).opacity(pulse && isActive ? 0.4 : 0.15)
-                    Circle().stroke(gradient.opacity(0.15), lineWidth: 2).frame(width: 86, height: 86)
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial).frame(width: 70, height: 70)
-                            .overlay(RoundedRectangle(cornerRadius: 20).stroke(.white.opacity(0.1), lineWidth: 1))
-                            .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
-                        Image(systemName: "lock.shield.fill").font(.system(size: 30, weight: .medium))
-                            .foregroundStyle(gradient)
-                    }
+                    // Outer glow pulse
+                    Circle()
+                        .fill(DS.Color.accent.opacity(0.06))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(pulse && isActive ? 1.15 : 1.0)
+                        .opacity(pulse && isActive ? 0.6 : 0.2)
+
+                    // Ring
+                    Circle()
+                        .stroke(DS.Color.accentGradient, lineWidth: 2)
+                        .frame(width: 100, height: 100)
+                        .opacity(0.2)
+
+                    // Shield card
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(Color(.controlBackgroundColor))
+                        .frame(width: 80, height: 80)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22)
+                                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.10), radius: 16, y: 6)
+
+                    // Lock icon
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 32, weight: .medium))
+                        .foregroundStyle(DS.Color.accentGradient)
                 }
 
-                Spacer().frame(height: 28)
+                Spacer().frame(height: 32)
 
-                // App name
+                // Brand
                 Text("TokenVault")
-                    .font(.system(size: 26, weight: .bold)).tracking(-0.6)
+                    .font(.system(size: 28, weight: .bold))
+                    .tracking(-0.6)
 
                 Text("API Token 管理器")
-                    .font(.system(size: 12)).foregroundColor(.secondary).padding(.top, 4)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
 
-                Spacer().frame(height: 8)
+                Spacer().frame(height: 10)
 
                 // Auth prompt
                 Text("需要 \(auth.biometryType) 解鎖")
-                    .font(.system(size: 14)).foregroundColor(.secondary)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
 
                 if auth.authFailed {
                     Text("認證失敗，再試一次")
-                        .font(.system(size: 12, weight: .medium)).foregroundColor(.red)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.red)
                         .padding(.horizontal, 16).padding(.vertical, 6)
                         .background(Capsule().fill(Color.red.opacity(0.08)))
-                        .padding(.top, 4)
+                        .padding(.top, 6)
                         .transition(.scale.combined(with: .opacity))
                 }
 
-                Spacer().frame(height: 20)
+                Spacer().frame(height: 24)
 
-                // Unlock button
+                // Unlock button — glass pill
                 Button {
                     Task {
                         let ok = await auth.authenticate()
@@ -69,44 +89,43 @@ struct LockView: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: auth.biometryType == "Face ID" ? "faceid" : "touchid").font(.system(size: 18))
-                        Text("使用 \(auth.biometryType) 解鎖").font(.system(size: 13, weight: .medium))
+                        Image(systemName: auth.biometryType == "Face ID" ? "faceid" : "touchid")
+                            .font(.system(size: 18))
+                        Text("使用 \(auth.biometryType) 解鎖")
+                            .font(.system(size: 13, weight: .medium))
                     }
-                    .padding(.horizontal, 28).padding(.vertical, 11)
-                    .background(Capsule().fill(.ultraThinMaterial))
-                    .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 1))
-                    .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
+                    .padding(.horizontal, 32).padding(.vertical, 12)
+                    .background(Capsule().fill(DS.Color.accent.opacity(0.12)))
+                    .overlay(Capsule().stroke(DS.Color.accent.opacity(0.2), lineWidth: 1))
+                    .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
                 }
                 .buttonStyle(.plain).focusEffectDisabled().keyboardShortcut(.return)
 
                 Spacer()
 
-                // Branding
-                VStack(spacing: 8) {
+                // Security note
+                VStack(spacing: 6) {
                     Divider().frame(width: 160).opacity(0.3)
 
-                    HStack(spacing: 6) {
-                        Text("WAHSUN").font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(gradient)
-                        Text("·").foregroundColor(.secondary.opacity(0.3))
-                        Text("© 2026").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.4))
-                    }
-
                     HStack(spacing: 4) {
-                        Image(systemName: "lock.fill").font(.system(size: 7)).foregroundColor(.green.opacity(0.5))
-                        Text("AES-256-GCM 加密").font(.system(size: 8))
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 7))
+                            .foregroundColor(.green.opacity(0.5))
+                        Text("AES-256-GCM 加密 · Secure Enclave")
+                            .font(.system(size: 8))
                             .foregroundColor(.secondary.opacity(0.35))
                     }
                 }
-                .padding(.bottom, 28)
+                .padding(.bottom, 32)
             }
-            .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 12)
+            .opacity(appear ? 1 : 0)
+            .offset(y: appear ? 0 : 12)
         }
-        .frame(width: 400, height: 480)
+        .frame(width: 420, height: 520)
         .onAppear {
             isActive = true
             withAnimation(.easeOut(duration: 0.5)) { appear = true }
-            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { pulse = true }
+            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) { pulse = true }
         }
         .onDisappear {
             isActive = false

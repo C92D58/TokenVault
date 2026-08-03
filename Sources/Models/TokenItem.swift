@@ -58,17 +58,47 @@ enum TokenType: String, Codable, CaseIterable {
     }
     var color: String {
         switch self {
-        case .github: return "#6E40C9"
+        case .github: return "#8B5CF6"
         case .gitlab: return "#FC6D26"
         case .aws: return "#FF9900"
         case .openai: return "#10A37F"
         case .cloudflare: return "#F38020"
-        case .slack: return "#4A154B"
+        case .slack: return "#7C3AED"
         case .stripe: return "#635BFF"
-        case .tailscale: return "#1A1A1A"
-        case .other: return "#6B7280"
+        case .tailscale: return "#6B7280"
+        case .other: return "#9CA3AF"
         }
     }
+
+    /// Refined display color for glass UI — slightly desaturated for modern aesthetic.
+    var glassColor: String {
+        switch self {
+        case .github: return "#7C5CBF"
+        case .gitlab: return "#E05D2E"
+        case .aws: return "#E68A00"
+        case .openai: return "#0E9270"
+        case .cloudflare: return "#E07520"
+        case .slack: return "#6E34B8"
+        case .stripe: return "#5850D8"
+        case .tailscale: return "#6B7280"
+        case .other: return "#9CA3AF"
+        }
+    }
+    /// Service dashboard URL for this token type.
+    var serviceURL: URL? {
+        switch self {
+        case .github: return URL(string: "https://github.com/settings/tokens")
+        case .gitlab: return URL(string: "https://gitlab.com/-/user_settings/personal_access_tokens")
+        case .aws: return URL(string: "https://console.aws.amazon.com/iam/home#/security_credentials")
+        case .openai: return URL(string: "https://platform.openai.com/api-keys")
+        case .cloudflare: return URL(string: "https://dash.cloudflare.com/profile/api-tokens")
+        case .slack: return URL(string: "https://api.slack.com/apps")
+        case .stripe: return URL(string: "https://dashboard.stripe.com/apikeys")
+        case .tailscale: return URL(string: "https://login.tailscale.com/admin/settings/keys")
+        case .other: return nil
+        }
+    }
+
     /// Auto-detect from token prefix / name
     static func detect(from name: String, value: String) -> TokenType {
         let q = "\(name) \(value.prefix(12))".lowercased()
@@ -114,7 +144,7 @@ final class TokenGroup: ObservableObject, Identifiable, Codable, Hashable {
     static func == (lhs: TokenGroup, rhs: TokenGroup) -> Bool { lhs.id == rhs.id }
 }
 
-// MARK: - Token Item
+// MARK: - Token Item  (Personal Secret Vault)
 
 final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     let id: UUID
@@ -123,36 +153,72 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     @Published var note: String
     @Published var environment: TokenEnvironment
     @Published var tokenType: TokenType
+    @Published var provider: SecretProvider
+    @Published var category: SecretCategory
+    @Published var secretType: SecretType
+    @Published var tags: [String]
     @Published var expiresAt: Date?
     @Published var createdAt: Date
+    @Published var lastUsedAt: Date?
+    @Published var deletedAt: Date?
     @Published var copyCount: Int
     @Published var isFavorite: Bool
     @Published var groupID: UUID?
+    @Published var rotatedAt: Date?
+    @Published var rotationDueAt: Date?
+    @Published var customFields: [String: String]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, encryptedValue, note, environment, tokenType, expiresAt, createdAt, copyCount, isFavorite, groupID
+        case id, name, encryptedValue, note, environment, tokenType
+        case provider, category, secretType, tags, expiresAt, createdAt
+        case lastUsedAt, deletedAt, copyCount, isFavorite, groupID
+        case rotatedAt, rotationDueAt, customFields
     }
 
-    init(name: String, plainValue: String, note: String = "", environment: TokenEnvironment = .production, tokenType: TokenType? = nil, expiresAt: Date? = nil, groupID: UUID? = nil) {
+    init(name: String, plainValue: String, note: String = "",
+         environment: TokenEnvironment = .production, tokenType: TokenType? = nil,
+         provider: SecretProvider? = nil, category: SecretCategory? = nil,
+         secretType: SecretType = .apiKey, tags: [String] = [],
+         expiresAt: Date? = nil, groupID: UUID? = nil,
+         customFields: [String: String] = [:]) {
+        let detectedType = tokenType ?? TokenType.detect(from: name, value: plainValue)
+        let detectedProvider = provider ?? SecretProvider.detect(from: name, value: plainValue)
         self.id = UUID(); self.name = name; self.note = note
         self.environment = environment; self.expiresAt = expiresAt; self.createdAt = Date()
+        self.lastUsedAt = nil; self.deletedAt = nil
         self.copyCount = 0; self.isFavorite = false; self.groupID = groupID
-        self.tokenType = tokenType ?? TokenType.detect(from: name, value: plainValue)
+        self.secretType = secretType
+        self.tags = tags
+        self.customFields = customFields
+        self.rotatedAt = nil; self.rotationDueAt = nil
+        self.tokenType = detectedType
+        self.provider = detectedProvider
+        self.category = category ?? detectedProvider.category
         self.encryptedValue = (try? EncryptionService.encrypt(plainValue)) ?? plainValue
     }
 
     required init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(UUID.self, forKey: .id); name = try c.decode(String.self, forKey: .name)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
         encryptedValue = try c.decode(String.self, forKey: .encryptedValue)
         note = try c.decode(String.self, forKey: .note)
         environment = (try? c.decode(TokenEnvironment.self, forKey: .environment)) ?? .production
         tokenType = (try? c.decode(TokenType.self, forKey: .tokenType)) ?? .other
+        provider = (try? c.decode(SecretProvider.self, forKey: .provider)) ?? .custom
+        category = (try? c.decode(SecretCategory.self, forKey: .category)) ?? .other
+        secretType = (try? c.decode(SecretType.self, forKey: .secretType)) ?? .apiKey
+        tags = (try? c.decode([String].self, forKey: .tags)) ?? []
         expiresAt = try c.decodeIfPresent(Date.self, forKey: .expiresAt)
         createdAt = try c.decode(Date.self, forKey: .createdAt)
+        lastUsedAt = try c.decodeIfPresent(Date.self, forKey: .lastUsedAt)
+        deletedAt = try c.decodeIfPresent(Date.self, forKey: .deletedAt)
         copyCount = try c.decode(Int.self, forKey: .copyCount)
         isFavorite = try c.decode(Bool.self, forKey: .isFavorite)
         groupID = try c.decodeIfPresent(UUID.self, forKey: .groupID)
+        rotatedAt = try c.decodeIfPresent(Date.self, forKey: .rotatedAt)
+        rotationDueAt = try c.decodeIfPresent(Date.self, forKey: .rotationDueAt)
+        customFields = (try? c.decode([String: String].self, forKey: .customFields)) ?? [:]
     }
 
     func encode(to encoder: Encoder) throws {
@@ -160,9 +226,14 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
         try c.encode(id, forKey: .id); try c.encode(name, forKey: .name)
         try c.encode(encryptedValue, forKey: .encryptedValue); try c.encode(note, forKey: .note)
         try c.encode(environment, forKey: .environment); try c.encode(tokenType, forKey: .tokenType)
+        try c.encode(provider, forKey: .provider); try c.encode(category, forKey: .category)
+        try c.encode(secretType, forKey: .secretType); try c.encode(tags, forKey: .tags)
         try c.encodeIfPresent(expiresAt, forKey: .expiresAt); try c.encode(createdAt, forKey: .createdAt)
+        try c.encodeIfPresent(lastUsedAt, forKey: .lastUsedAt); try c.encodeIfPresent(deletedAt, forKey: .deletedAt)
         try c.encode(copyCount, forKey: .copyCount); try c.encode(isFavorite, forKey: .isFavorite)
         try c.encodeIfPresent(groupID, forKey: .groupID)
+        try c.encodeIfPresent(rotatedAt, forKey: .rotatedAt); try c.encodeIfPresent(rotationDueAt, forKey: .rotationDueAt)
+        try c.encode(customFields, forKey: .customFields)
     }
 
     static func == (lhs: TokenItem, rhs: TokenItem) -> Bool { lhs.id == rhs.id }
@@ -173,10 +244,15 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
         guard v.count > 8 else { return String(repeating: "•", count: 8) }
         return "\(v.prefix(4))\(String(repeating: "•", count: 8))\(v.suffix(4))"
     }
+    var isDeleted: Bool { deletedAt != nil }
     var isExpired: Bool { expiresAt.map { $0 < Date() } ?? false }
     var expiresSoon: Bool {
         guard let e = expiresAt else { return false }
         return e < Calendar.current.date(byAdding: .day, value: 7, to: Date())! && !isExpired
+    }
+    var needsRotation: Bool {
+        guard let due = rotationDueAt else { return false }
+        return due < Date()
     }
     var envColor: Color {
         switch environment {
@@ -184,5 +260,11 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
         case .staging: return Color(red: 0.96, green: 0.62, blue: 0.04)
         case .production: return Color(red: 0.94, green: 0.27, blue: 0.27)
         }
+    }
+
+    /// Duplicate detection: check if plain value matches another token
+    func hasDuplicate(in tokens: [TokenItem]) -> Bool {
+        let myVal = decryptedValue()
+        return tokens.contains { $0.id != self.id && $0.decryptedValue() == myVal }
     }
 }
