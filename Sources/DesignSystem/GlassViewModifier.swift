@@ -28,6 +28,16 @@ enum SurfaceLevel {
         case .chrome:    return Color.primary.opacity(0.04)
         }
     }
+
+    /// Material overlay for translucent glass effect.
+    var material: Material {
+        switch self {
+        case .subtle:    return .ultraThinMaterial
+        case .standard:  return .ultraThinMaterial
+        case .prominent: return .regularMaterial
+        case .chrome:    return .ultraThinMaterial
+        }
+    }
 }
 
 // MARK: - Surface Modifier
@@ -47,6 +57,10 @@ struct Surface: ViewModifier {
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(level.backgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(level.material)
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -57,7 +71,8 @@ struct Surface: ViewModifier {
 
 // MARK: - Card Modifier
 
-/// Solid card with shadow, hover scale effect, and focus glow.
+/// Card with translucent material, shadow, hover lift (2px), and focus glow.
+/// Apple HIG: cards lift on hover — they do NOT scale.
 struct CardSurface: ViewModifier {
     let isHovering: Bool
     let isFocused: Bool
@@ -74,24 +89,35 @@ struct CardSurface: ViewModifier {
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(Color(.controlBackgroundColor))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(.ultraThinMaterial)
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(
                         isFocused
-                            ? Color(red: 0.60, green: 0.47, blue: 0.98).opacity(0.35)
+                            ? DS.Color.accent.opacity(0.35)
                             : Color.primary.opacity(isHovering ? 0.10 : 0.06),
                         lineWidth: isFocused ? 1.5 : 1
                     )
             )
             .shadow(
-                color: .black.opacity(isHovering || isFocused ? 0.08 : 0.04),
-                radius: isHovering || isFocused ? 16 : 8,
-                y: isHovering || isFocused ? 6 : 2
+                color: .black.opacity(isHovering || isFocused
+                    ? DS.Card.hoverShadowOpacity
+                    : DS.Card.normalShadowOpacity),
+                radius: isHovering || isFocused
+                    ? DS.Card.hoverShadowBlur
+                    : DS.Card.normalShadowBlur,
+                y: isHovering || isFocused
+                    ? DS.Card.hoverShadowY
+                    : DS.Card.normalShadowY
             )
-            .scaleEffect(isHovering ? 1.01 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovering)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isFocused)
+            // Apple HIG: lift 2px on hover — do NOT scale.
+            .offset(y: (isHovering || isFocused) ? -DS.Card.hoverLift : 0)
+            .animation(DS.Animation.easeOut, value: isHovering)
+            .animation(DS.Animation.easeOut, value: isFocused)
     }
 }
 
@@ -136,6 +162,30 @@ struct AmbientGlow: ViewModifier {
     }
 }
 
+// MARK: - Accent Glow Modifier
+
+/// Radial gradient glow for active/selected elements.
+/// Apple-style subtle highlight rather than a hard border.
+struct AccentGlow: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RadialGradient(
+                    colors: [
+                        DS.Color.accent.opacity(isActive ? 0.10 : 0.0),
+                        DS.Color.accent.opacity(0.0)
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 60
+                )
+            )
+            .animation(DS.Animation.easeOut, value: isActive)
+    }
+}
+
 // MARK: - View Extensions
 
 extension View {
@@ -158,5 +208,10 @@ extension View {
     /// Apply ambient glow background.
     func ambientGlow(color: Color = Color(red: 0.60, green: 0.47, blue: 0.98), radius: CGFloat = 40) -> some View {
         modifier(AmbientGlow(color: color, radius: radius))
+    }
+
+    /// Apply radial accent glow for active/selected elements.
+    func accentGlow(isActive: Bool = true) -> some View {
+        modifier(AccentGlow(isActive: isActive))
     }
 }

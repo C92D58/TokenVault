@@ -11,9 +11,9 @@ struct LockView: View {
 
     var body: some View {
         ZStack {
-            // Solid gradient background with particles
-            DS.Color.accentGradientSubtle
-            Color(.controlBackgroundColor)
+            // Glass material background with particles
+            Color(.windowBackgroundColor).opacity(0.3)
+            DS.Color.accentGradientSubtle.opacity(0.5)
             ParticleField(count: 20, color: DS.Color.accentLight)
 
             VStack(spacing: 0) {
@@ -34,10 +34,11 @@ struct LockView: View {
                         .frame(width: 100, height: 100)
                         .opacity(0.2)
 
-                    // Shield card
+                    // Shield card — glass material
                     RoundedRectangle(cornerRadius: 22)
                         .fill(Color(.controlBackgroundColor))
                         .frame(width: 80, height: 80)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22))
                         .overlay(
                             RoundedRectangle(cornerRadius: 22)
                                 .stroke(Color.primary.opacity(0.12), lineWidth: 1)
@@ -109,10 +110,10 @@ struct LockView: View {
 
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 7))
+                            .font(.system(size: 9))
                             .foregroundColor(.green.opacity(0.5))
                         Text("AES-256-GCM 加密 · Secure Enclave")
-                            .font(.system(size: 8))
+                            .font(.system(size: 10))
                             .foregroundColor(.secondary.opacity(0.35))
                     }
                 }
@@ -122,9 +123,10 @@ struct LockView: View {
             .offset(y: appear ? 0 : 12)
         }
         .frame(width: 420, height: 520)
+        .background(.ultraThinMaterial)
         .onAppear {
             isActive = true
-            withAnimation(.easeOut(duration: 0.5)) { appear = true }
+            withAnimation(DS.Animation.fade) { appear = true }
             withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) { pulse = true }
         }
         .onDisappear {

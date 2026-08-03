@@ -39,7 +39,7 @@
 3. **App Store Connect 建立 App**:
    - Bundle ID: `org.wahsun.tokenvault`
    - 分類: Developer Tools
-   - 定價: $19.99 一次性
+   - 定價: 免費
 4. **簽名改為 Developer ID**:
    ```bash
    codesign --force --deep --sign "Developer ID Application: WAHSUN (TEAMID)" \

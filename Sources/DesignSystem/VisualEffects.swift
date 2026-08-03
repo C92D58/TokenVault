@@ -47,6 +47,25 @@ extension View {
     }
 }
 
+// MARK: - 1.5 Skeleton Loading Row
+
+/// Skeleton loading row with shimmer — for loading states.
+/// Apple HIG: prefer skeleton over spinner.
+struct SkeletonRow: View {
+    let height: CGFloat
+
+    init(height: CGFloat = 20) {
+        self.height = height
+    }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color.primary.opacity(0.06))
+            .frame(height: height)
+            .shimmer()
+    }
+}
+
 // MARK: - 2. Ripple / Click Feedback Effect
 
 /// Ripple effect that expands from a point — used for copy feedback.
@@ -180,9 +199,9 @@ struct GlassEdgeGlow: ViewModifier {
                         AngularGradient(
                             colors: [
                                 .white.opacity(0.0),
-                                .white.opacity(isActive ? 0.3 : 0.0),
-                                DS.Color.accent.opacity(isActive ? 0.4 : 0.0),
-                                .white.opacity(isActive ? 0.3 : 0.0),
+                                .white.opacity(isActive ? 0.15 : 0.0),
+                                DS.Color.accent.opacity(isActive ? 0.20 : 0.0),
+                                .white.opacity(isActive ? 0.15 : 0.0),
                                 .white.opacity(0.0),
                             ],
                             center: .center,
@@ -190,7 +209,7 @@ struct GlassEdgeGlow: ViewModifier {
                         ),
                         lineWidth: 1.5
                     )
-                    .blur(radius: isActive ? 3 : 0)
+                    .blur(radius: isActive ? 2 : 0)
             )
             .onChange(of: isActive) { _, active in
                 if active {
@@ -253,6 +272,24 @@ struct CopyFlash: ViewModifier {
     }
 }
 
+// MARK: - 7. SF Symbol Copy Feedback
+
+/// Lightweight copy feedback using SF Symbol animation (.bounce).
+/// Use for button-level icons where the full CopyFlash overlay is overkill.
+struct SymbolCopyFeedback: ViewModifier {
+    let trigger: Bool
+    @State private var bounce = false
+
+    func body(content: Content) -> some View {
+        content
+            .symbolEffect(.bounce, value: bounce)
+            .onChange(of: trigger) { _, new in
+                if new { bounce = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { bounce = false }
+            }
+    }
+}
+
 extension View {
     func rippleClick(color: Color = DS.Color.accent) -> some View {
         modifier(RippleEffect(color: color))
@@ -260,5 +297,10 @@ extension View {
 
     func copyFlash(trigger: Bool) -> some View {
         modifier(CopyFlash(trigger: trigger))
+    }
+
+    /// SF Symbol bounce effect for copy confirmations.
+    func symbolBounce(trigger: Bool) -> some View {
+        modifier(SymbolCopyFeedback(trigger: trigger))
     }
 }

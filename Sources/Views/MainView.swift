@@ -42,10 +42,17 @@ struct MainView: View {
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var showSpotlight = false
     @State private var hideSecrets = true
+    @State private var iconPulse = false
+    @State private var filterExpiringSoon = false
+    @State private var filterExpired = false
+    @State private var showFavorites = false
 
     var tokens: [TokenItem] {
         var result = store.search(searchText, in: selectedGroup)
         if showTrash { result = result.filter { $0.isDeleted } }
+        if showFavorites { result = result.filter { $0.isFavorite } }
+        if filterExpired { result = result.filter { $0.isExpired } }
+        if filterExpiringSoon { result = result.filter { $0.expiresSoon } }
         if let env = selectedEnv { result = result.filter { $0.environment == env } }
         if let cat = selectedCategory { result = result.filter { $0.category == cat } }
         return sortOrder.sort(result)
@@ -120,52 +127,52 @@ struct MainView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     SidebarItem(label: "所有 Secret", icon: "tray.full.fill",
                                 count: store.activeTokens.count,
-                                isSelected: selectedGroup == nil && selectedEnv == nil && selectedCategory == nil && !showTrash,
-                                action: { selectedGroup = nil; selectedEnv = nil; selectedCategory = nil; showTrash = false })
+                                isSelected: selectedGroup == nil && selectedEnv == nil && selectedCategory == nil && !showTrash && !showFavorites && !filterExpired && !filterExpiringSoon,
+                                action: { selectedGroup = nil; selectedEnv = nil; selectedCategory = nil; showTrash = false; showFavorites = false; filterExpired = false; filterExpiringSoon = false })
 
                     // Favorites
                     let favCount = store.activeTokens.filter(\.isFavorite).count
                     if favCount > 0 {
-                        SidebarSection("⭐ 收藏")
+                        SidebarSection("收藏")
                         SidebarItem(label: "我的最愛", icon: "star.fill", count: favCount,
-                                    isSelected: false, // favorites filtered below in tokens computed prop
-                                    action: { /* filter by fav */ })
+                                    isSelected: showFavorites && !showTrash,
+                                    action: { showFavorites.toggle(); selectedGroup = nil; selectedEnv = nil; selectedCategory = nil; showTrash = false; filterExpired = false; filterExpiringSoon = false })
                     }
 
-                    // Categories with emojis
-                    SidebarSection("📂 分類")
+                    // Categories
+                    SidebarSection("分類")
                     ForEach(SecretCategory.allCases, id: \.self) { cat in
                         let count = store.activeTokens.filter { $0.category == cat }.count
                         if count > 0 {
-                            SidebarItem(label: "\(cat.emoji) \(cat.rawValue)", icon: cat.icon, count: count,
+                            SidebarItem(label: cat.rawValue, icon: cat.icon, count: count,
                                         isSelected: selectedCategory == cat && !showTrash,
-                                        action: { selectedCategory = (selectedCategory == cat) ? nil : cat; showTrash = false })
+                                        action: { selectedCategory = (selectedCategory == cat) ? nil : cat; showTrash = false; showFavorites = false; filterExpired = false; filterExpiringSoon = false })
                         }
                     }
 
                     // Environments
-                    SidebarSection("🔧 環境")
+                    SidebarSection("環境")
                     ForEach(TokenEnvironment.allCases, id: \.self) { env in
                         let count = store.activeTokens.filter { $0.environment == env }.count
                         SidebarItem(label: env.rawValue, icon: env.icon, count: count,
                                     isSelected: selectedEnv == env && !showTrash,
-                                    action: { selectedEnv = (selectedEnv == env) ? nil : env; selectedCategory = nil; showTrash = false })
+                                    action: { selectedEnv = (selectedEnv == env) ? nil : env; selectedCategory = nil; showTrash = false; showFavorites = false; filterExpired = false; filterExpiringSoon = false })
                     }
 
                     // Groups
                     if !store.groups.isEmpty {
-                        SidebarSection("📁 分組")
+                        SidebarSection("分組")
                         ForEach(store.groups) { group in
                             SidebarItem(label: group.name, icon: group.icon, count: group.tokens.filter { !$0.isDeleted }.count,
                                         isSelected: selectedGroup == group && !showTrash,
-                                        action: { selectedGroup = (selectedGroup == group) ? nil : group; showTrash = false })
+                                        action: { selectedGroup = (selectedGroup == group) ? nil : group; showTrash = false; showFavorites = false; filterExpired = false; filterExpiringSoon = false })
                         }
                     }
 
                     // Trash
                     if !store.trashedTokens.isEmpty {
                         Divider().padding(.horizontal, 14).padding(.vertical, 4).opacity(0.3)
-                        SidebarSection("🗑️ 垃圾桶")
+                        SidebarSection("垃圾桶")
                         SidebarItem(label: "已刪除", icon: "trash", count: store.trashedTokens.count,
                                     isSelected: showTrash,
                                     action: {
@@ -177,14 +184,14 @@ struct MainView: View {
                 .padding(.vertical, 6)
             }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(.ultraThinMaterial)
     }
 
     private var brandIcon: some View {
         ZStack {
-            AnimatedGradient(colors: [DS.Color.accentLight, DS.Color.accent, DS.Color.accentDark])
+            RoundedRectangle(cornerRadius: 7)
+                .fill(DS.Color.accentGradient)
                 .frame(width: 24, height: 24)
-                .clipShape(RoundedRectangle(cornerRadius: 7))
             RoundedRectangle(cornerRadius: 7)
                 .stroke(.white.opacity(0.18), lineWidth: 1)
                 .frame(width: 24, height: 24)
@@ -198,13 +205,16 @@ struct MainView: View {
 
     private var contentView: some View {
         VStack(spacing: 0) {
-            DashboardBar(store: store)
+            DashboardBar(store: store, filterExpiringSoon: $filterExpiringSoon, filterExpired: $filterExpired)
             toolbarView
             if isMultiSelectMode && !showTrash { batchActionBar }
             Divider()
             if tokens.isEmpty { emptyView } else { listView }
         }
-        .background(Color(.windowBackgroundColor))
+        .background(
+            Color(.windowBackgroundColor)
+                .overlay(.ultraThinMaterial.opacity(0.15))
+        )
         .overlay(alignment: .bottomTrailing) {
             KeyboardHUD().padding(20)
         }
@@ -255,9 +265,7 @@ struct MainView: View {
                     .focusEffectDisabled()
                 }
             }
-            .padding(.horizontal, 10).padding(.vertical, 7)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+            .inputField()
 
             if !showTrash {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -271,6 +279,17 @@ struct MainView: View {
                     .padding(.vertical, 2)
                 }
                 .frame(height: 24)
+
+                // Active filter chips
+                if showFavorites {
+                    FilterChip(label: "⭐ 收藏") { showFavorites = false }
+                }
+                if filterExpiringSoon {
+                    FilterChip(label: "⏰ 即將到期") { filterExpiringSoon = false }
+                }
+                if filterExpired {
+                    FilterChip(label: "❌ 已過期") { filterExpired = false }
+                }
             }
 
             // Sort menu
@@ -399,7 +418,7 @@ struct MainView: View {
             .disabled(selectedTokenIDs.isEmpty)
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
-        .background(Color(.controlBackgroundColor))
+        .surface(level: .subtle, cornerRadius: 0)
         .overlay(alignment: .bottom) { Divider() }
         .sheet(isPresented: $showBatchMove) {
             batchMoveSheet
@@ -502,6 +521,7 @@ struct MainView: View {
                 Circle()
                     .fill(DS.Color.accent.opacity(0.06))
                     .frame(width: 90, height: 90)
+                    .scaleEffect(iconPulse ? 1.06 : 1.0)
                 Circle()
                     .stroke(DS.Color.accent.opacity(0.12), lineWidth: 1.5)
                     .frame(width: 72, height: 72)
@@ -509,6 +529,9 @@ struct MainView: View {
                     .font(.system(size: 34))
                     .foregroundColor(DS.Color.accent.opacity(0.35))
             }
+            .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: iconPulse)
+            .onAppear { iconPulse = true }
+            .onDisappear { iconPulse = false }
             VStack(spacing: 6) {
                 Text(showTrash ? "垃圾桶為空" : searchText.isEmpty ? "尚無 Token" : "無匹配結果")
                     .font(.system(size: 16, weight: .semibold))
@@ -575,6 +598,8 @@ private struct SidebarItem: View {
         .buttonStyle(.plain)
         .focusEffectDisabled()
         .onHover { isHovering = $0 }
+        .animation(.easeOut(duration: 0.18), value: isSelected)
+        .animation(.easeOut(duration: 0.15), value: isHovering)
     }
 }
 
@@ -586,6 +611,31 @@ private struct SidebarSection: View {
             .font(.system(size: 10, weight: .semibold))
             .foregroundColor(.secondary.opacity(0.5))
             .padding(.horizontal, 14).padding(.top, 8)
+    }
+}
+
+// MARK: - Active Filter Chip
+
+private struct FilterChip: View {
+    let label: String
+    let onRemove: () -> Void
+
+    init(label: String, onRemove: @escaping () -> Void) {
+        self.label = label
+        self.onRemove = onRemove
+    }
+
+    var body: some View {
+        Button(action: onRemove) {
+            HStack(spacing: 3) {
+                Text(label).font(.system(size: 9, weight: .medium))
+                Image(systemName: "xmark").font(.system(size: 7, weight: .bold))
+            }
+            .padding(.horizontal, 6).padding(.vertical, 3)
+        }
+        .buttonStyle(.plain).focusEffectDisabled()
+        .background(Capsule().fill(DS.Color.accent.opacity(0.12)))
+        .foregroundColor(DS.Color.accent)
     }
 }
 
@@ -604,8 +654,10 @@ private struct EnvFilterPill: View {
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
-        .background(Capsule().fill(isSelected ? env.color.fg.swiftUIColor : Color.gray.opacity(0.12)))
-        .foregroundColor(isSelected ? env.color.bg.swiftUIColor : .secondary)
+        .background(
+            Capsule().fill(isSelected ? env.color.fg.swiftUIColor.opacity(0.18) : Color.gray.opacity(0.12))
+        )
+        .foregroundColor(isSelected ? env.color.fg.swiftUIColor : .secondary)
         .clipShape(Capsule())
     }
 }
@@ -711,20 +763,20 @@ struct TokenCard: View {
                 .padding(.trailing, 10)
         }
         .frame(height: cardHeight)
-        .background(cardBackground)
+        .cardSurface(isHovering: isHovering, isFocused: isFocused, cornerRadius: 10)
         .copyFlash(trigger: copyFlashTrigger)
         .padding(.horizontal, 1)
-        // Staggered entrance
-        .scaleEffect(hasAppeared ? 1 : 0.92)
+        // Staggered entrance — Apple-style: opacity + fade-up, NO scale
         .opacity(hasAppeared ? 1 : 0)
-        .offset(y: hasAppeared ? 0 : 12)
+        .offset(y: hasAppeared ? 0 : 8)
         .onAppear {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.7).delay(Double(index) * 0.04)) {
+            withAnimation(.spring(response: DS.Card.entranceResponse, dampingFraction: DS.Card.entranceDamping)
+                .delay(Double(index) * DS.Card.staggerDelay)) {
                 hasAppeared = true
             }
         }
         .onHover { hovering in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
+            withAnimation(DS.Animation.easeOut) {
                 isHovering = hovering
             }
             if hovering { onFocus() } else { onBlur() }
@@ -738,27 +790,6 @@ struct TokenCard: View {
             else { onFocus() }
         }
         .contextMenu { cardContextMenu }
-    }
-
-    // MARK: - Card Background
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 10)
-            .fill(Color(.controlBackgroundColor))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(
-                        isFocused
-                            ? DS.Color.accent.opacity(0.45)
-                            : Color.primary.opacity(isHovering ? 0.14 : 0.07),
-                        lineWidth: isFocused ? 1.5 : 1
-                    )
-            )
-            .shadow(
-                color: .black.opacity(isHovering || isFocused ? 0.10 : 0.05),
-                radius: isHovering || isFocused ? 16 : 6,
-                y: isHovering || isFocused ? 6 : 2
-            )
     }
 
     // MARK: - Trailing View
@@ -784,6 +815,7 @@ struct TokenCard: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { copyFlashTrigger = false }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                     }
+                    .symbolEffect(.bounce, value: copied)
                     // Edit
                     trailingBtn("pencil", color: .secondary) { onEdit() }
                     // Open URL
@@ -816,7 +848,7 @@ struct TokenCard: View {
                 }
             }
             .opacity(isHovering ? 1 : 0.55)
-            .animation(.easeOut(duration: 0.2), value: isHovering)
+            .animation(DS.Animation.easeOut, value: isHovering)
         }
     }
 
@@ -832,8 +864,8 @@ struct TokenCard: View {
                 )
         }
         .buttonStyle(.plain).focusEffectDisabled()
-        .scaleEffect(isHovering ? 1.0 : 0.9)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovering)
+        .opacity(isHovering ? 1.0 : 0.5)
+        .animation(DS.Animation.easeOut, value: isHovering)
     }
 
     // MARK: - Context Menu

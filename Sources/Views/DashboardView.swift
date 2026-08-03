@@ -4,119 +4,65 @@ import SwiftUI
 
 struct DashboardBar: View {
     @ObservedObject var store: DataStore
+    @Binding var filterExpiringSoon: Bool
+    @Binding var filterExpired: Bool
     @State private var appeared = false
 
-    private var stats: (total: Int, expired: Int, expiringSoon: Int, healthScore: Int, mostUsed: TokenItem?, recent: TokenItem?) {
+    private var stats: (total: Int, expired: Int, expiringSoon: Int, mostUsed: TokenItem?, recent: TokenItem?) {
         let active = store.activeTokens
         let total = active.count
         let expired = active.filter(\.isExpired).count
         let soon = active.filter(\.expiresSoon).count
         let mostUsed = active.max(by: { $0.copyCount < $1.copyCount })
         let recent = active.filter { $0.lastUsedAt != nil }.max(by: { ($0.lastUsedAt ?? .distantPast) < ($1.lastUsedAt ?? .distantPast) })
-
-        // Health score: 100 - penalties
-        var score = 100
-        if total > 0 {
-            score -= (expired * 20)
-            score -= (soon * 8)
-            let missedRenewal = active.filter {
-                guard let e = $0.expiresAt else { return false }
-                return e < Calendar.current.date(byAdding: .day, value: -30, to: Date())!
-            }.count
-            score -= (missedRenewal * 5)
-        }
-        score = max(0, min(100, score))
-
-        return (total, expired, soon, score, mostUsed, recent)
+        return (total, expired, soon, mostUsed, recent)
     }
 
     var body: some View {
         HStack(spacing: 0) {
-            // Health ring — fixed width, left-aligned
-            healthSection
-                .frame(width: 120)
+            statCell(title: "即將到期", value: "\(stats.expiringSoon)",
+                     icon: "clock.badge.exclamationmark",
+                     color: stats.expiringSoon > 0 ? .orange : .secondary,
+                     isActive: filterExpiringSoon,
+                     showDivider: false,
+                     action: { filterExpiringSoon.toggle(); filterExpired = false })
 
-            // Stat cards — equally distributed
-            HStack(spacing: 0) {
-                statCell(title: "即將到期", value: "\(stats.expiringSoon)",
-                         icon: "clock.badge.exclamationmark",
-                         color: stats.expiringSoon > 0 ? .orange : .secondary)
+            statCell(title: "已過期", value: "\(stats.expired)",
+                     icon: "xmark.shield.fill",
+                     color: stats.expired > 0 ? .red : .secondary,
+                     isActive: filterExpired,
+                     action: { filterExpired.toggle(); filterExpiringSoon = false })
 
-                statCell(title: "已過期", value: "\(stats.expired)",
-                         icon: "xmark.shield.fill",
-                         color: stats.expired > 0 ? .red : .secondary)
-
-                statCell(title: recentLabel, value: recentName,
-                         icon: recentIcon,
-                         color: recentColor,
-                         subtitle: recentSubtitle)
-            }
+            statCell(title: recentLabel, value: recentName,
+                     icon: recentIcon,
+                     color: recentColor,
+                     subtitle: recentSubtitle)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 3)
+        .surface(level: .standard, cornerRadius: 12)
+        .shadow(color: DS.Shadow.card.color, radius: DS.Shadow.card.radius, y: DS.Shadow.card.y)
         .padding(.horizontal, 14).padding(.top, 8)
-        .scaleEffect(appeared ? 1 : 0.97)
         .opacity(appeared ? 1 : 0)
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(DS.Animation.spring) {
                 appeared = true
             }
         }
     }
 
-    // MARK: - Health Section
-
-    private var healthSection: some View {
-        HStack(spacing: 10) {
-            ZStack {
-                // Background ring
-                Circle()
-                    .stroke(Color.secondary.opacity(0.12), lineWidth: 3)
-                    .frame(width: 36, height: 36)
-                // Progress ring
-                Circle()
-                    .trim(from: 0, to: CGFloat(stats.healthScore) / 100.0)
-                    .stroke(
-                        healthColor,
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                    )
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.8), value: stats.healthScore)
-                // Score text
-                Text("\(stats.healthScore)")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(healthColor)
-            }
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("安全分數")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.secondary)
-                Text(stats.total > 0 ? "\(stats.total) 個 Token" : "尚無資料")
-                    .font(.system(size: 9))
-                    .foregroundColor(.secondary.opacity(0.6))
-            }
-        }
-        .help("安全分數：過期扣 20 分，即將到期扣 8 分，過期超過 30 天扣 5 分")
-    }
-
     // MARK: - Stat Cell
 
     private func statCell(title: String, value: String, icon: String,
-                          color: Color, subtitle: String? = nil) -> some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(Color.primary.opacity(0.08))
-                .frame(width: 1, height: 32)
+                          color: Color, subtitle: String? = nil,
+                          isActive: Bool = false,
+                          showDivider: Bool = true,
+                          action: (() -> Void)? = nil) -> some View {
+        let content = HStack(spacing: 0) {
+            if showDivider {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.08))
+                    .frame(width: 1, height: 32)
+            }
 
             HStack(spacing: 8) {
                 Image(systemName: icon)
@@ -143,6 +89,22 @@ struct DashboardBar: View {
                 }
             }
             .padding(.horizontal, 10)
+        }
+
+        return Group {
+            if let action = action {
+                Button(action: action) {
+                    content
+                }
+                .buttonStyle(.plain)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isActive ? color.opacity(0.08) : Color.clear)
+                )
+                .help("點擊篩選\(title)的 Token")
+            } else {
+                content
+            }
         }
     }
 
@@ -189,9 +151,6 @@ struct DashboardBar: View {
         }
     }
 
-    private var healthColor: Color {
-        stats.healthScore >= 80 ? .green : stats.healthScore >= 50 ? .orange : .red
-    }
 }
 
 // MARK: - Token Generator + JWT Decoder

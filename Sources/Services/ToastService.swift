@@ -35,17 +35,17 @@ struct ToastOverlay: View {
                     Text(toast.message)
                         .font(.system(size: 12, weight: .medium))
                 }
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .padding(.horizontal, 18).padding(.vertical, 11)
                 .background(
                     Capsule()
-                        .fill(Color.black.opacity(0.75))
+                        .fill(.regularMaterial)
                 )
                 .overlay(
                     Capsule()
-                        .stroke(.white.opacity(0.15), lineWidth: 1)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.2), radius: 16, y: 6)
+                .shadow(color: .black.opacity(0.15), radius: 16, y: 6)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .padding(.bottom, 28)
             }

@@ -98,31 +98,39 @@ enum DS {
     }
 
     // MARK: - Shadows
+    // Apple HIG-aligned: shadows should barely suggest elevation.
+    // In dark mode these naturally render darker — verify both appearances.
 
     enum Shadow {
-        /// Subtle card shadow
-        static let card = (color: SwiftUI.Color.black.opacity(0.04), radius: CGFloat(8), y: CGFloat(2))
-        /// Elevated card shadow (hover state)
-        static let cardElevated = (color: SwiftUI.Color.black.opacity(0.08), radius: CGFloat(16), y: CGFloat(6))
+        /// Subtle card shadow — normal state
+        static let card = (color: SwiftUI.Color.black.opacity(0.08), radius: CGFloat(12), y: CGFloat(4))
+        /// Elevated card shadow — hover / focused state
+        static let cardElevated = (color: SwiftUI.Color.black.opacity(0.15), radius: CGFloat(24), y: CGFloat(10))
         /// Popover / floating panel shadow
-        static let floating = (color: SwiftUI.Color.black.opacity(0.12), radius: CGFloat(24), y: CGFloat(8))
+        static let floating = (color: SwiftUI.Color.black.opacity(0.12), radius: CGFloat(20), y: CGFloat(8))
         /// Window-level shadow (minimal)
         static let window = (color: SwiftUI.Color.black.opacity(0.02), radius: CGFloat(4), y: CGFloat(1))
     }
 
     // MARK: - Animation
+    // Apple HIG-aligned: response=0.35 damping=0.7 for standard transitions.
+    // Hover micro-interactions use easeOut 0.18s, not spring.
 
     enum Animation {
-        /// Standard spring for UI transitions
-        static let spring = SwiftUI.Animation.spring(response: 0.4, dampingFraction: 0.7)
-        /// Snappy spring for hover / micro-interactions
-        static let snappy = SwiftUI.Animation.spring(response: 0.3, dampingFraction: 0.6)
-        /// Bouncy spring for prominent transitions
-        static let bouncy = SwiftUI.Animation.spring(response: 0.5, dampingFraction: 0.5)
-        /// Gentle ease for opacity fades
+        /// Standard spring for UI transitions (response 0.35, damping 0.7)
+        static let spring = SwiftUI.Animation.spring(response: 0.35, dampingFraction: 0.7)
+        /// Snappy spring for micro-interactions / quick state changes
+        static let snappy = SwiftUI.Animation.spring(response: 0.25, dampingFraction: 0.65)
+        /// Bouncy spring for prominent entrance transitions
+        static let bouncy = SwiftUI.Animation.spring(response: 0.50, dampingFraction: 0.55)
+        /// Gentle ease for opacity fades and content transitions
         static let fade = SwiftUI.Animation.easeOut(duration: 0.25)
+        /// Fast ease-out for hover state transitions (Apple-style 180ms)
+        static let easeOut = SwiftUI.Animation.easeOut(duration: 0.18)
+        /// Standard ease-out for button hover feedback
+        static let buttonHover = SwiftUI.Animation.easeOut(duration: 0.18)
 
-        /// Standard transition: scale + opacity
+        /// Standard transition: scale + opacity (sheets, modals)
         static let appear = AnyTransition.scale(scale: 0.95).combined(with: .opacity)
         /// Slide-up transition for toasts
         static let slideUp = AnyTransition.move(edge: .bottom).combined(with: .opacity)
@@ -135,6 +143,20 @@ enum DS {
         static let accentBarWidth: CGFloat = 3
         static let iconSize: CGFloat = 32
         static let cornerRadius: CGFloat = Radius.md
+
+        // Elevation — Apple HIG: cards lift 2px on hover, do NOT scale.
+        static let hoverLift: CGFloat = 2
+        static let hoverShadowY: CGFloat = Shadow.cardElevated.y
+        static let hoverShadowBlur: CGFloat = Shadow.cardElevated.radius
+        static let hoverShadowOpacity: Double = 0.15
+        static let normalShadowY: CGFloat = Shadow.card.y
+        static let normalShadowBlur: CGFloat = Shadow.card.radius
+        static let normalShadowOpacity: Double = 0.08
+
+        // Entrance animation
+        static let staggerDelay: Double = 0.04
+        static let entranceResponse: Double = 0.35
+        static let entranceDamping: Double = 0.7
     }
 }
 

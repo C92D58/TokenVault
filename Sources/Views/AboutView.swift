@@ -59,12 +59,6 @@ struct AboutView: View {
                 Text("© 2026 WAHSUN").font(.system(size: 11, weight: .medium))
             }
 
-            HStack(spacing: 6) {
-                Image(systemName: "macbook").font(.system(size: 9))
-                Text("macOS 專用")
-            }
-            .font(.system(size: 9))
-            .foregroundColor(.secondary.opacity(0.5))
         }
         .padding(30)
         .frame(width: 380, height: 420)
@@ -74,6 +68,7 @@ struct AboutView: View {
                 DS.Color.accentGradientSubtle.opacity(0.5)
             }
         )
+        .background(.ultraThinMaterial)
         .onTapGesture { tapped += 1 }
         .overlay(alignment: .bottom) {
             if tapped >= 5 {

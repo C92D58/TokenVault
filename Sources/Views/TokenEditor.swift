@@ -40,9 +40,7 @@ struct TokenEditor: View {
                 TextField("例如：GitHub Personal Token", text: $name)
                     .textFieldStyle(.plain)
                     .focused($focusedField, equals: .name)
-                    .padding(.horizontal, 10).padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                    .inputField()
 
                 // Environment + Type
                 HStack(alignment: .top, spacing: 12) {
@@ -55,9 +53,7 @@ struct TokenEditor: View {
                         }
                         .pickerStyle(.menu).labelsHidden()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                        .inputField()
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -69,9 +65,7 @@ struct TokenEditor: View {
                         }
                         .pickerStyle(.menu).labelsHidden()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 10).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                        .inputField()
                     }
                 }
 
@@ -98,9 +92,7 @@ struct TokenEditor: View {
                     .buttonStyle(.plain).focusEffectDisabled()
                     .frame(width: 26)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                .inputField()
 
                 // Note + Group
                 HStack(alignment: .top, spacing: 12) {
@@ -109,9 +101,7 @@ struct TokenEditor: View {
                         TextField("可選", text: $note)
                             .textFieldStyle(.plain)
                             .focused($focusedField, equals: .note)
-                            .padding(.horizontal, 10).padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                            .inputField()
                     }
 
                     if !store.groups.isEmpty {
@@ -123,9 +113,7 @@ struct TokenEditor: View {
                             }
                             .pickerStyle(.menu).labelsHidden()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 10).padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+                            .inputField()
                         }
                     }
                 }
@@ -235,8 +223,8 @@ struct GroupSheet: View {
             Text("新增分組")
                 .font(.system(size: 15, weight: .bold))
             TextField("分組名稱", text: $name)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 200)
+                .textFieldStyle(.plain)
+                .inputField()
                 .focused($isFocused)
             HStack(spacing: 10) {
                 Button("取消") { onDismiss() }

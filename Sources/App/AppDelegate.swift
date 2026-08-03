@@ -171,7 +171,13 @@ extension AppDelegate: NSApplicationDelegate {
         w.isReleasedWhenClosed = false
         w.isMovableByWindowBackground = movable
         w.backgroundColor = .windowBackgroundColor
-        w.isOpaque = true
+        // macOS 26+ Liquid Glass: allow translucency through the window.
+        // On older systems, keep opaque for compatibility.
+        if #available(macOS 26, *) {
+            w.isOpaque = false
+        } else {
+            w.isOpaque = true
+        }
         w.hasShadow = true
         if floating { w.level = .floating }
         if fullSize {

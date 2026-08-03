@@ -124,7 +124,10 @@ struct SpotlightSearch: View {
             }
         }
         .frame(width: 420, height: 340)
-        .background(Color(.controlBackgroundColor))
+        .background(
+            Color(.controlBackgroundColor)
+                .overlay(.ultraThinMaterial)
+        )
         .cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.primary.opacity(0.10), lineWidth: 1))
         .shadow(color: .black.opacity(0.2), radius: 40, y: 16)

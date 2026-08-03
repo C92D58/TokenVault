@@ -13,6 +13,10 @@ echo "📦 Packaging TokenVault for distribution..."
 # Clean up previous
 rm -rf "$STAGING" "$DMG_FILE"
 
+# Ensure no old mount
+hdiutil detach /Volumes/TokenVault 2>/dev/null || true
+sleep 1
+
 # Create staging directory
 mkdir -p "$STAGING"
 
@@ -22,20 +26,17 @@ cp -R "$APP" "$STAGING/"
 # Create Applications symlink (for drag-to-install)
 ln -s /Applications "$STAGING/Applications"
 
-# Create read-write DMG first (so we can set layout)
-TMP_DMG=".build/tmp.dmg"
-rm -f "$TMP_DMG"
-hdiutil create \
-    -volname "TokenVault" \
-    -srcfolder "$STAGING" \
-    -ov \
-    -format UDRW \
-    "$TMP_DMG" \
+# Create DMG directly using diskutil (modern, non-deprecated)
+echo "💿 Creating DMG..."
+diskutil image create from "$STAGING" \
+    --volumeName "TokenVault" \
+    --format UDZO \
+    "$DMG_FILE" \
     > /dev/null
 
-# Mount and configure layout
+# Configure layout (mount, arrange icons, unmount)
 echo "🎨 Configuring DMG layout..."
-MOUNT_POINT=$(hdiutil attach "$TMP_DMG" -nobrowse -noautoopen 2>&1 | awk '/\/Volumes\/TokenVault/ {print $NF}')
+MOUNT_POINT=$(hdiutil attach "$DMG_FILE" -nobrowse -noautoopen 2>&1 | awk '/\/Volumes\/TokenVault/ {print $NF}')
 if [ -n "$MOUNT_POINT" ] && [ -d "$MOUNT_POINT" ]; then
     osascript -e "
     tell application \"Finder\"
@@ -57,15 +58,6 @@ if [ -n "$MOUNT_POINT" ] && [ -d "$MOUNT_POINT" ]; then
     hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
     echo "   Layout configured."
 fi
-
-# Convert to compressed read-only DMG
-echo "💿 Compressing DMG..."
-hdiutil convert "$TMP_DMG" \
-    -format UDZO \
-    -imagekey zlib-level=9 \
-    -o "$DMG_FILE" \
-    > /dev/null
-rm -f "$TMP_DMG"
 
 # Sign the DMG
 echo "🔏 Signing DMG..."

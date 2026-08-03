@@ -61,9 +61,7 @@ struct PopoverView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
             }
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.textBackgroundColor)))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.primary.opacity(0.10), lineWidth: 1))
+            .inputField()
             .padding(.horizontal, 12).padding(.bottom, 8)
 
             Divider().opacity(0.3)
@@ -128,7 +126,7 @@ struct PopoverView: View {
             .padding(.horizontal, 14).padding(.vertical, 8)
         }
         .frame(width: 360)
-        .background(Color(.windowBackgroundColor))
+        .background(Color(.windowBackgroundColor).overlay(.ultraThinMaterial))
     }
 
     private func popoverRow(_ token: TokenItem) -> some View {

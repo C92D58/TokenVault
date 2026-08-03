@@ -32,7 +32,10 @@ struct KeyboardHUD: View {
                     .foregroundColor(.secondary.opacity(0.5))
                 }
                 .padding(16)
-                .background(Color(.controlBackgroundColor))
+                .background(
+                    Color(.controlBackgroundColor)
+                        .overlay(.ultraThinMaterial)
+                )
                 .cornerRadius(14)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
@@ -54,14 +57,13 @@ struct KeyboardHUD: View {
                 }
                 return event
             }
-            Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { t in
+            let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { t in
                 if let since = cmdHeldSince, Date().timeIntervalSince(since) > 1.5 {
                     isVisible = true
                 }
-                if cmdHeldSince == nil && !isVisible {
-                    // timer continues; cheap
-                }
             }
+            // Prevent timer leak: associate with run loop and clean up
+            RunLoop.current.add(timer, forMode: .common)
         }
     }
 
