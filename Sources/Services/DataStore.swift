@@ -109,7 +109,7 @@ final class DataStore: ObservableObject {
         }
         t.deletedAt = Date()
         for g in groups { g.tokens.removeAll { $0.id == tokenID } }
-        SecurityLogService.shared.log(.deleted, secretID: t.id, name: t.name, provider: t.provider.rawValue)
+        SecurityLogService.shared.log(.deleted, tokenID: t.id, name: t.name, provider: t.provider.rawValue)
         undoManager.registerUndo(withTarget: self) { store in
             store.restoreToken(t)
             for (group, idx) in oldGroups {
@@ -124,7 +124,7 @@ final class DataStore: ObservableObject {
     /// Restore a soft-deleted token. Supports undo.
     func restoreToken(_ t: TokenItem) {
         t.deletedAt = nil
-        SecurityLogService.shared.log(.restored, secretID: t.id, name: t.name, provider: t.provider.rawValue)
+        SecurityLogService.shared.log(.restored, tokenID: t.id, name: t.name, provider: t.provider.rawValue)
         undoManager.registerUndo(withTarget: self) { store in
             store.softDeleteToken(t)
             ToastService.shared.show("已復原", icon: "arrow.uturn.backward")
@@ -190,7 +190,6 @@ final class DataStore: ObservableObject {
         return results.filter {
             $0.name.localizedCaseInsensitiveContains(finalQuery)
             || $0.note.localizedCaseInsensitiveContains(finalQuery)
-            || $0.tokenType.label.localizedCaseInsensitiveContains(finalQuery)
             || $0.environment.rawValue.localizedCaseInsensitiveContains(finalQuery)
             || $0.provider.rawValue.localizedCaseInsensitiveContains(finalQuery)
             || $0.category.rawValue.localizedCaseInsensitiveContains(finalQuery)
@@ -215,7 +214,7 @@ final class DataStore: ObservableObject {
     func useToken(_ t: TokenItem) {
         t.lastUsedAt = Date()
         t.copyCount += 1
-        SecurityLogService.shared.log(.copied, secretID: t.id, name: t.name, provider: t.provider.rawValue)
+        SecurityLogService.shared.log(.copied, tokenID: t.id, name: t.name, provider: t.provider.rawValue)
         notify()
     }
 }

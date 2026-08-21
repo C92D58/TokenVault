@@ -24,7 +24,7 @@ struct AboutView: View {
                 Text("TokenVault")
                     .font(.system(size: 22, weight: .bold))
                     .tracking(-0.5)
-                Text("版本 1.0")
+                Text("版本 \(appVersion)")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -82,10 +82,14 @@ struct AboutView: View {
         .animation(.spring(response: 0.3), value: tapped)
     }
 
+    private var appVersion: String {
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
+    }
+
     private func badge(_ text: String, icon: String, color: Color) -> some View {
         HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 7))
-            Text(text).font(.system(size: 9, weight: .medium))
+            Image(systemName: icon).font(.system(size: 9))
+            Text(text).font(.system(size: 10, weight: .medium))
         }
         .foregroundColor(color)
         .padding(.horizontal, 7).padding(.vertical, 3)

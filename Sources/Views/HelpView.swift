@@ -19,7 +19,7 @@ struct HelpView: View {
                 shortcutRow("⇧⌘N", "新增分組")
                 shortcutRow("⌘⇧T", "貼上最近使用的 Token（全域）")
                 shortcutRow("⌘L", "鎖定 TokenVault")
-                shortcutRow("⌘F", "搜尋 Token")
+                shortcutRow("⌘K", "Spotlight 搜尋 Token")
                 shortcutRow("⌘,", "開啟設定")
                 shortcutRow("⌘W", "關閉視窗")
                 shortcutRow("⌘Q", "退出")

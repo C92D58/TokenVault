@@ -189,7 +189,7 @@ struct SettingsView: View {
                         Spacer().frame(height: 60)
                         Image(systemName: "list.bullet.rectangle").font(.system(size: 28)).foregroundColor(.secondary.opacity(0.3))
                         Text("尚無操作記錄").font(.system(size: 13)).foregroundColor(.secondary)
-                        Text("所有 Secret 操作將自動記錄於此").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.5))
+                        Text("所有 Token 操作將自動記錄於此").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.5))
                         Spacer()
                     }
                     .frame(maxWidth: .infinity)
@@ -201,9 +201,9 @@ struct SettingsView: View {
                                 .foregroundColor(entry.action == .copied ? .blue : .secondary)
                                 .frame(width: 20)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("\(entry.action.rawValue)「\(entry.secretName)」").font(.system(size: 12))
+                                Text("\(entry.action.rawValue)「\(entry.tokenName)」").font(.system(size: 12))
                                 Text("\(entry.provider) · \(entry.relativeTime)")
-                                    .font(.system(size: 9)).foregroundColor(.secondary)
+                                    .font(.system(size: 10)).foregroundColor(.secondary)
                             }
                             Spacer()
                         }

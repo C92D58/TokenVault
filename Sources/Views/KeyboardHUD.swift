@@ -26,8 +26,8 @@ struct KeyboardHUD: View {
                     Divider().opacity(0.3)
 
                     HStack {
-                        Image(systemName: "hand.tap.fill").font(.system(size: 9))
-                        Text("按住 ⌘ 顯示此面板").font(.system(size: 9))
+                        Image(systemName: "hand.tap.fill").font(.system(size: 10))
+                        Text("按住 ⌘ 顯示此面板").font(.system(size: 10))
                     }
                     .foregroundColor(.secondary.opacity(0.5))
                 }

@@ -1,10 +1,18 @@
 import SwiftUI
 
-// MARK: - Secret Category
+// MARK: - Token Taxonomy
+//
+// 單一來源的 Token 分類系統，取代過去重疊的 TokenType / SecretProvider /
+// SecretCategory / SecretType 四套分類。
+//
+//   TokenProvider  — 簽發服務（GitHub、OpenAI、AWS…）→ 品牌圖示、顏色、控台網址
+//   TokenCategory  — 側欄功能分組（AI、雲端、資料庫…）
+//   TokenKind      — 憑證格式（API 金鑰、OAuth、SSH 私鑰…）
 
-/// Categorized secret types for the Personal Secret Vault.
-/// Each category has an emoji, SF Symbol icon, and accent color.
-enum SecretCategory: String, Codable, CaseIterable {
+// MARK: - Token Category
+
+/// 功能分組，用於側欄分類。
+enum TokenCategory: String, Codable, CaseIterable {
     case ai = "人工智慧"
     case cloud = "雲端服務"
     case database = "資料庫"
@@ -62,10 +70,10 @@ enum SecretCategory: String, Codable, CaseIterable {
     }
 }
 
-// MARK: - Secret Type Definition
+// MARK: - Token Kind
 
-/// Polymorphic secret type — supports API keys, SSH keys, OAuth, JWT, etc.
-enum SecretType: String, Codable, CaseIterable {
+/// 憑證格式。
+enum TokenKind: String, Codable, CaseIterable {
     case apiKey = "API 金鑰"
     case oauth = "OAuth 權杖"
     case sshKey = "SSH 私鑰"
@@ -93,10 +101,10 @@ enum SecretType: String, Codable, CaseIterable {
     }
 }
 
-// MARK: - Secret Provider Definition
+// MARK: - Token Provider
 
-/// Known service providers with their specific field schemas.
-enum SecretProvider: String, Codable, CaseIterable {
+/// 簽發服務，Token 的品牌識別來源（圖示、顏色、控台網址）。
+enum TokenProvider: String, Codable, CaseIterable {
     case openai = "OpenAI"
     case claude = "Claude"
     case gemini = "Gemini"
@@ -114,7 +122,13 @@ enum SecretProvider: String, Codable, CaseIterable {
     case tailscale = "Tailscale"
     case apple = "Apple"
     case docker = "Docker"
+    case vercel = "Vercel"
+    case supabase = "Supabase"
+    case huggingface = "HuggingFace"
     case custom = "自訂"
+
+    /// 顯示名稱。
+    var label: String { rawValue }
 
     var icon: String {
         switch self {
@@ -135,10 +149,14 @@ enum SecretProvider: String, Codable, CaseIterable {
         case .tailscale: return "point.3.connected.trianglepath.dotted"
         case .apple: return "apple.logo"
         case .docker: return "shippingbox.fill"
+        case .vercel: return "triangle.fill"
+        case .supabase: return "cylinder.fill"
+        case .huggingface: return "face.smiling.fill"
         case .custom: return "questionmark.square.fill"
         }
     }
 
+    /// 品牌色（單一正規 hex，明暗模式皆可讀）。
     var color: String {
         switch self {
         case .openai: return "#10A37F"
@@ -158,36 +176,19 @@ enum SecretProvider: String, Codable, CaseIterable {
         case .tailscale: return "#6B7280"
         case .apple: return "#555555"
         case .docker: return "#2496ED"
+        case .vercel: return "#4B5563"
+        case .supabase: return "#3ECF8E"
+        case .huggingface: return "#E0B800"
         case .custom: return "#9CA3AF"
         }
     }
 
-    /// Auto-detect provider from name / token prefix
-    static func detect(from name: String, value: String) -> SecretProvider {
-        let q = "\(name) \(value.prefix(16))".lowercased()
-        if q.contains("sk-") && q.contains("openai") || q.contains("sk-proj-") || q.contains("sk-admin-") { return .openai }
-        if q.contains("sk-ant-") || q.contains("claude") || q.contains("anthropic") { return .claude }
-        if q.contains("gemini") || q.contains("google") && q.contains("ai") { return .gemini }
-        if q.contains("deepseek") { return .deepseek }
-        if q.contains("ghp_") || q.contains("github") || q.contains("gho_") || q.contains("ghu_") { return .github }
-        if q.contains("glpat-") || q.contains("gitlab") { return .gitlab }
-        if q.contains("akia") || q.contains("aws") { return .aws }
-        if q.contains("azure") { return .azure }
-        if q.contains("cloudflare") || q.contains("cf_") { return .cloudflare }
-        if q.contains("telegram") || q.contains("bot") && q.contains("token") { return .telegram }
-        if q.contains("discord") { return .discord }
-        if q.contains("xoxb-") || q.contains("slack") { return .slack }
-        if q.contains("sk_live") || q.contains("sk_test") || q.contains("stripe") { return .stripe }
-        if q.contains("tskey-") || q.contains("tailscale") { return .tailscale }
-        if q.contains("apple") || q.contains("appstore") { return .apple }
-        if q.contains("docker") { return .docker }
-        return .custom
-    }
-
-    var category: SecretCategory {
+    /// 預設功能分組。
+    var category: TokenCategory {
         switch self {
-        case .openai, .claude, .gemini, .deepseek: return .ai
-        case .aws, .azure, .google, .cloudflare: return .cloud
+        case .openai, .claude, .gemini, .deepseek, .huggingface: return .ai
+        case .aws, .azure, .google, .cloudflare, .vercel: return .cloud
+        case .supabase: return .database
         case .telegram, .discord, .slack: return .social
         case .stripe: return .payment
         case .tailscale: return .server
@@ -196,6 +197,7 @@ enum SecretProvider: String, Codable, CaseIterable {
         }
     }
 
+    /// 服務控台 / 憑證管理網址。
     var serviceURL: URL? {
         switch self {
         case .openai: return URL(string: "https://platform.openai.com/api-keys")
@@ -215,7 +217,45 @@ enum SecretProvider: String, Codable, CaseIterable {
         case .tailscale: return URL(string: "https://login.tailscale.com/admin/settings/keys")
         case .apple: return URL(string: "https://appstoreconnect.apple.com/access/api")
         case .docker: return URL(string: "https://hub.docker.com/settings/security")
+        case .vercel: return URL(string: "https://vercel.com/account/tokens")
+        case .supabase: return URL(string: "https://app.supabase.com/account/tokens")
+        case .huggingface: return URL(string: "https://huggingface.co/settings/tokens")
         case .custom: return nil
+        }
+    }
+
+    /// 依名稱 / token 前綴自動偵測服務商。
+    static func detect(from name: String, value: String) -> TokenProvider {
+        let q = "\(name) \(value.prefix(16))".lowercased()
+        if q.contains("sk-") && q.contains("openai") || q.contains("sk-proj-") || q.contains("sk-admin-") { return .openai }
+        if q.contains("sk-ant-") || q.contains("claude") || q.contains("anthropic") { return .claude }
+        if q.contains("gemini") || q.contains("google") && q.contains("ai") { return .gemini }
+        if q.contains("deepseek") { return .deepseek }
+        if q.contains("ghp_") || q.contains("github") || q.contains("gho_") || q.contains("ghu_") { return .github }
+        if q.contains("glpat-") || q.contains("gitlab") { return .gitlab }
+        if q.contains("akia") || q.contains("aws") { return .aws }
+        if q.contains("azure") { return .azure }
+        if q.contains("cloudflare") || q.contains("cf_") { return .cloudflare }
+        if q.contains("hf_") || q.contains("huggingface") { return .huggingface }
+        if q.contains("vercel") { return .vercel }
+        if q.contains("supabase") || q.contains("sb_") { return .supabase }
+        if q.contains("telegram") || q.contains("bot") && q.contains("token") { return .telegram }
+        if q.contains("discord") { return .discord }
+        if q.contains("xoxb-") || q.contains("slack") { return .slack }
+        if q.contains("sk_live") || q.contains("sk_test") || q.contains("stripe") { return .stripe }
+        if q.contains("tskey-") || q.contains("tailscale") { return .tailscale }
+        if q.contains("apple") || q.contains("appstore") { return .apple }
+        if q.contains("docker") { return .docker }
+        return .custom
+    }
+
+    /// 從舊版 TokenType（lowercase rawValue）遷移對映。
+    static func fromLegacyTokenType(_ raw: String) -> TokenProvider {
+        switch raw.lowercased() {
+        case "google": return .google
+        case "other", "": return .custom
+        default:
+            return TokenProvider.allCases.first { $0.rawValue.lowercased() == raw.lowercased() } ?? .custom
         }
     }
 }

@@ -6,7 +6,7 @@
   <img src="Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="TokenVault" width="128" />
 </p>
 
-TokenVault 是一款專為開發者設計的 **API 密鑰管理工具**。不同於一般密碼管理器，TokenVault 從頭建構了開發者真正需要的功能：環境標記（開發／預發／正式）、Token 類型自動識別、內建 JWT 解碼器、一鍵 Token 產生器，以及選單列快速複製 —— 全部以 **AES-256-GCM 加密**保護。
+TokenVault 是一款專為開發者設計的 **API 密鑰管理工具**。不同於一般密碼管理器，TokenVault 從頭建構了開發者真正需要的功能：環境標記（開發／預發／正式）、服務商自動識別、內建 JWT 解碼器、一鍵 Token 產生器，以及選單列快速複製 —— 全部以 **AES-256-GCM 加密**保護。
 
 本專案為 **開源軟體**，採用 MIT 授權條款，歡迎貢獻與二次開發。
 
@@ -33,9 +33,9 @@ TokenVault 是一款專為開發者設計的 **API 密鑰管理工具**。不同
 
 ### 🧠 為開發者打造
 
-- **9 種 Token 類型自動識別** — GitHub、GitLab、AWS、OpenAI、Cloudflare、Slack、Stripe、Tailscale、自訂
-- **17 種服務提供商識別** — OpenAI、Claude、Gemini、DeepSeek、AWS、Azure、GCP 等
-- **10 種密鑰分類** — AI、雲端、資料庫、社群、金流、SSH、JWT、憑證等
+- **21 種服務商自動識別** — OpenAI、GitHub、AWS、Azure、Google Cloud、Claude、Gemini、DeepSeek、Vercel、Supabase 等
+- **10 種 Token 分類** — AI、雲端、資料庫、社群、金流、SSH、JWT、憑證、伺服器、其他
+- **10 種憑證格式** — API 金鑰、OAuth 權杖、SSH 私鑰、JWT、Cookie、授權、Webhook 等
 - **環境標記** — 開發（Development）、預發（Staging）、正式（Production）
 - **內建 JWT 解碼器** — 一鍵解碼 Header + Payload
 - **Token 產生器** — 自訂長度、字元集，一鍵產生安全密鑰
@@ -91,7 +91,7 @@ bash build.sh
 
 1. 點擊主視窗右上角的 **＋** 按鈕（或按 `⌘N`）
 2. 輸入 Token 名稱與值（支援 `SecureField` 遮罩顯示）
-3. 選擇環境（開發／預發／正式）與類型（自動檢測）
+3. 選擇環境（開發／預發／正式）與服務商（自動檢測）
 4. 可選：設定到期日、加入分組、添加備註
 5. 點擊「儲存」— Token 即時以 AES-256-GCM 加密寫入磁碟
 

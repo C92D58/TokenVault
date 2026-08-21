@@ -110,7 +110,7 @@ struct LockView: View {
 
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 9))
+                            .font(.system(size: 10))
                             .foregroundColor(.green.opacity(0.5))
                         Text("AES-256-GCM 加密 · Secure Enclave")
                             .font(.system(size: 10))

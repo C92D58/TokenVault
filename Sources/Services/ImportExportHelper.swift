@@ -41,7 +41,7 @@ enum ImportExportHelper {
     static func exportCSV(_ tokens: [TokenItem]) -> String {
         var csv = "名稱,值,備註,環境,類型,到期日\n"
         for t in tokens {
-            csv += "\"\(t.name)\",\"\(t.decryptedValue())\",\"\(t.note)\",\(t.environment.rawValue),\(t.tokenType.label),\(t.expiresAt?.ISO8601Format() ?? "")\n"
+            csv += "\"\(t.name)\",\"\(t.decryptedValue())\",\"\(t.note)\",\(t.environment.rawValue),\(t.provider.label),\(t.expiresAt?.ISO8601Format() ?? "")\n"
         }
         return csv
     }

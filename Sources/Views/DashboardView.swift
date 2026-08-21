@@ -78,12 +78,12 @@ struct DashboardBar: View {
                         .truncationMode(.tail)
                     if let sub = subtitle {
                         Text(sub)
-                            .font(.system(size: 9))
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     } else {
                         Text(title)
-                            .font(.system(size: 9))
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
                 }

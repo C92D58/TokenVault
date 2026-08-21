@@ -10,7 +10,8 @@ struct TokenEditor: View {
     @State private var value = ""
     @State private var note = ""
     @State private var environment: TokenEnvironment = .production
-    @State private var tokenType: TokenType = .other
+    @State private var provider: TokenProvider = .custom
+    @State private var kind: TokenKind = .apiKey
     @State private var hasExpiry = false
     @State private var expiryDate = Date().addingTimeInterval(86400 * 30)
     @State private var selectedGroup: TokenGroup?
@@ -42,7 +43,7 @@ struct TokenEditor: View {
                     .focused($focusedField, equals: .name)
                     .inputField()
 
-                // Environment + Type
+                // Environment + Provider + Kind
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         fieldLabel("環境", icon: "square.3.layers.3d")
@@ -57,10 +58,22 @@ struct TokenEditor: View {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        fieldLabel("類型", icon: "square.grid.2x2")
-                        Picker("", selection: $tokenType) {
-                            ForEach(TokenType.allCases, id: \.self) { type in
-                                Text(type.label).tag(type)
+                        fieldLabel("服務商", icon: "square.grid.2x2")
+                        Picker("", selection: $provider) {
+                            ForEach(TokenProvider.allCases, id: \.self) { p in
+                                Text(p.label).tag(p)
+                            }
+                        }
+                        .pickerStyle(.menu).labelsHidden()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .inputField()
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        fieldLabel("憑證類型", icon: "key.horizontal")
+                        Picker("", selection: $kind) {
+                            ForEach(TokenKind.allCases, id: \.self) { k in
+                                Text(k.rawValue).tag(k)
                             }
                         }
                         .pickerStyle(.menu).labelsHidden()
@@ -146,7 +159,7 @@ struct TokenEditor: View {
             }
             .padding(.horizontal, 20).padding(.vertical, 12)
         }
-        .frame(width: 480, height: 420)
+        .frame(width: 480, height: 470)
         .onAppear {
             load()
             focusedField = .name
@@ -157,7 +170,7 @@ struct TokenEditor: View {
 
     private func fieldLabel(_ text: String, icon: String) -> some View {
         Label(text, systemImage: icon)
-            .font(.system(size: 10.5, weight: .semibold))
+            .font(.system(size: 11, weight: .semibold))
             .foregroundColor(.secondary)
     }
 
@@ -166,7 +179,7 @@ struct TokenEditor: View {
     private func load() {
         guard let t = token else {
             if let pb = NSPasteboard.general.string(forType: .string), !pb.isEmpty {
-                tokenType = TokenType.detect(from: "", value: pb)
+                provider = TokenProvider.detect(from: "", value: pb)
             }
             return
         }
@@ -174,7 +187,8 @@ struct TokenEditor: View {
         value = t.decryptedValue()
         note = t.note
         environment = t.environment
-        tokenType = t.tokenType
+        provider = t.provider
+        kind = t.kind
         selectedGroup = store.groups.first { $0.id == t.groupID }
         if let e = t.expiresAt { hasExpiry = true; expiryDate = e }
     }
@@ -185,7 +199,7 @@ struct TokenEditor: View {
                 name: name.trimmingCharacters(in: .whitespaces),
                 plainValue: value.trimmingCharacters(in: .whitespaces),
                 note: note,
-                environment: environment, tokenType: tokenType,
+                environment: environment, provider: provider, kind: kind,
                 expiresAt: hasExpiry ? expiryDate : nil,
                 groupID: selectedGroup?.id
             ), to: selectedGroup)
@@ -196,7 +210,8 @@ struct TokenEditor: View {
             t.note = note
             t.groupID = selectedGroup?.id
             t.environment = environment
-            t.tokenType = tokenType
+            t.provider = provider
+            t.kind = kind
             t.expiresAt = hasExpiry ? expiryDate : nil
             let newValue = value.trimmingCharacters(in: .whitespaces)
             if newValue != t.decryptedValue() {

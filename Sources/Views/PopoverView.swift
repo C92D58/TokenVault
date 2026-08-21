@@ -110,9 +110,9 @@ struct PopoverView: View {
             // Footer
             HStack {
                 HStack(spacing: 4) {
-                    Image(systemName: "command").font(.system(size: 9))
-                    Image(systemName: "shift").font(.system(size: 9))
-                    Text("T").font(.system(size: 9, weight: .bold, design: .monospaced))
+                    Image(systemName: "command").font(.system(size: 10))
+                    Image(systemName: "shift").font(.system(size: 10))
+                    Text("T").font(.system(size: 10, weight: .bold, design: .monospaced))
                     Text("貼上").font(.system(size: 10))
                 }
                 .foregroundColor(.secondary.opacity(0.4))
@@ -152,7 +152,7 @@ struct PopoverView: View {
                     Text(token.category.emoji).font(.system(size: 9))
                 }
                 Text("\(token.provider.rawValue) · \(token.environment.rawValue)")
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary).lineLimit(1)
             }
             Spacer()

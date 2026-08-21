@@ -23,7 +23,7 @@ struct SpotlightSearch: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16))
                     .foregroundColor(.secondary.opacity(0.6))
-                TextField("搜尋 Secret...", text: $query)
+                TextField("搜尋 Token...", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 16))
                     .focused($isFocused)
@@ -92,7 +92,7 @@ struct SpotlightSearch: View {
                                     }
                                     Spacer()
                                     if token.isFavorite {
-                                        Image(systemName: "star.fill").font(.system(size: 9)).foregroundColor(.orange)
+                                        Image(systemName: "star.fill").font(.system(size: 10)).foregroundColor(.orange)
                                     }
                                     // Shortcut hint for first 4 results
                                     if idx < 4 {
@@ -114,7 +114,7 @@ struct SpotlightSearch: View {
                 // Quick actions when empty
                 VStack(spacing: 8) {
                     Spacer()
-                    quickAction("plus.circle", "新增 Secret", "⌘N")
+                    quickAction("plus.circle", "新增 Token", "⌘N")
                     quickAction("square.and.arrow.down", "導入 .env", "⌘I")
                     quickAction("wand.and.stars", "Token 工具箱")
                     quickAction("arrow.triangle.2.circlepath", "健康檢查")
@@ -155,7 +155,7 @@ struct SpotlightSearch: View {
 
     private func filterChip(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9, design: .monospaced))
+            .font(.system(size: 10, design: .monospaced))
             .foregroundColor(.secondary.opacity(0.5))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Capsule().fill(.quaternary))

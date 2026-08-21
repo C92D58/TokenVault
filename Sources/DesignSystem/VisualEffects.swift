@@ -141,8 +141,12 @@ struct ParticleField: View {
         var delay: Double
     }
 
-    private let particles: [Particle] = {
-        (0..<20).map { _ in
+    private let particles: [Particle]
+
+    init(count: Int = 20, color: Color) {
+        self.count = count
+        self.color = color
+        self.particles = (0..<count).map { _ in
             Particle(
                 x: CGFloat.random(in: 0...1),
                 y: CGFloat.random(in: 0...1),
@@ -152,7 +156,7 @@ struct ParticleField: View {
                 delay: Double.random(in: 0...5)
             )
         }
-    }()
+    }
 
     var body: some View {
         TimelineView(.animation) { timeline in

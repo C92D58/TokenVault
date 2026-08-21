@@ -18,7 +18,7 @@ struct ImportWizard: View {
     struct ParsedToken: Identifiable {
         let id = UUID()
         let name: String; let value: String; let note: String
-        let env: TokenEnvironment; let type: TokenType
+        let env: TokenEnvironment; let provider: TokenProvider
         var selected: Bool = true
     }
 
@@ -160,7 +160,7 @@ struct ImportWizard: View {
             VStack(spacing: 6) {
                 Text("或直接貼上內容").font(.system(size: 10)).foregroundColor(.secondary.opacity(0.5))
                 TextEditor(text: $fileContent)
-                    .font(.system(size: 9, design: .monospaced))
+                    .font(.system(size: 11, design: .monospaced))
                     .frame(height: 60)
                     .scrollContentBackground(.hidden)
                     .padding(6)
@@ -232,7 +232,7 @@ struct ImportWizard: View {
             Spacer()
             HStack(spacing: 4) {
                 envPill(token.env)
-                typePill(token.type)
+                providerPill(token.provider)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
@@ -240,18 +240,18 @@ struct ImportWizard: View {
     }
 
     private func envPill(_ env: TokenEnvironment) -> some View {
-        Text(env.rawValue).font(Font.system(size: 8, weight: .bold))
+        Text(env.rawValue).font(Font.system(size: 10, weight: .bold))
             .padding(.horizontal, 5).padding(.vertical, 2)
-            .background(Capsule().fill(env.color.fg.swiftUIColor.opacity(0.18)))
-            .foregroundColor(env.color.fg.swiftUIColor)
+            .background(Capsule().fill(env.brandColor.opacity(0.18)))
+            .foregroundColor(env.brandColor)
     }
 
-    private func typePill(_ type: TokenType) -> some View {
+    private func providerPill(_ provider: TokenProvider) -> some View {
         HStack(spacing: 3) {
-            Image(systemName: type.icon).font(.system(size: 7))
-            Text(type.label).font(.system(size: 8))
+            Image(systemName: provider.icon).font(.system(size: 9))
+            Text(provider.label).font(.system(size: 10))
         }
-        .foregroundColor(type.color.swiftUIColor.opacity(0.7))
+        .foregroundColor(provider.color.swiftUIColor.opacity(0.7))
     }
 
     // MARK: - Step 2: Result
@@ -326,14 +326,14 @@ struct ImportWizard: View {
         if text.contains("=") && !text.hasPrefix("{") && !text.hasPrefix("[") {
             tokens = ImportExportHelper.parseEnv(text).map {
                 ParsedToken(name: $0.name, value: $0.value, note: $0.note,
-                            env: .production, type: TokenType.detect(from: $0.name, value: $0.value))
+                            env: .production, provider: TokenProvider.detect(from: $0.name, value: $0.value))
             }
         }
 
         if tokens.isEmpty && text.contains(",") {
             tokens = ImportExportHelper.parseCSV(text).map {
                 ParsedToken(name: $0.name, value: $0.value, note: $0.note,
-                            env: $0.env, type: TokenType.detect(from: $0.name, value: $0.value))
+                            env: $0.env, provider: TokenProvider.detect(from: $0.name, value: $0.value))
             }
         }
 
@@ -342,7 +342,7 @@ struct ImportWizard: View {
                let snap = try? JSONDecoder().decode(DataStore.BackupSnapshot.self, from: data) {
                 tokens = snap.tokens.map {
                     ParsedToken(name: $0.name, value: $0.decryptedValue(), note: $0.note,
-                                env: $0.environment, type: $0.tokenType)
+                                env: $0.environment, provider: $0.provider)
                 }
             }
         }
@@ -362,7 +362,7 @@ struct ImportWizard: View {
                         .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
                     guard !value.isEmpty else { return nil }
                     return ParsedToken(name: name, value: value, note: "手動貼上導入",
-                                       env: .production, type: TokenType.detect(from: name, value: value))
+                                       env: .production, provider: TokenProvider.detect(from: name, value: value))
                 }
         }
 
@@ -375,7 +375,7 @@ struct ImportWizard: View {
         let selected = parsedTokens.enumerated().filter { selectedTokens.contains($0.offset) }.map(\.element)
         for t in selected {
             store.addToken(TokenItem(name: t.name, plainValue: t.value, note: t.note,
-                                     environment: t.env, tokenType: t.type), to: nil)
+                                     environment: t.env, provider: t.provider), to: nil)
         }
         importCount = selected.count
         importSuccess = true

@@ -26,7 +26,7 @@ struct MainView: View {
     @State private var searchText = ""
     @State private var selectedGroup: TokenGroup? = nil
     @State private var selectedEnv: TokenEnvironment? = nil
-    @State private var selectedCategory: SecretCategory? = nil
+    @State private var selectedCategory: TokenCategory? = nil
     @State private var showTrash = false
     @State private var sortOrder: TokenSortOrder = .recent
     @State private var showAddToken = false
@@ -125,7 +125,7 @@ struct MainView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
-                    SidebarItem(label: "所有 Secret", icon: "tray.full.fill",
+                    SidebarItem(label: "所有 Token", icon: "tray.full.fill",
                                 count: store.activeTokens.count,
                                 isSelected: selectedGroup == nil && selectedEnv == nil && selectedCategory == nil && !showTrash && !showFavorites && !filterExpired && !filterExpiringSoon,
                                 action: { selectedGroup = nil; selectedEnv = nil; selectedCategory = nil; showTrash = false; showFavorites = false; filterExpired = false; filterExpiringSoon = false })
@@ -141,7 +141,7 @@ struct MainView: View {
 
                     // Categories
                     SidebarSection("分類")
-                    ForEach(SecretCategory.allCases, id: \.self) { cat in
+                    ForEach(TokenCategory.allCases, id: \.self) { cat in
                         let count = store.activeTokens.filter { $0.category == cat }.count
                         if count > 0 {
                             SidebarItem(label: cat.rawValue, icon: cat.icon, count: count,
@@ -375,7 +375,7 @@ struct MainView: View {
                     .font(.system(size: 12)).foregroundColor(.secondary)
             }
             .buttonStyle(.plain).focusEffectDisabled()
-            .help(hideSecrets ? "顯示 Secret 值" : "隱藏 Secret 值").accessibilityLabel("顯示/隱藏")
+            .help(hideSecrets ? "顯示 Token 值" : "隱藏 Token 值").accessibilityLabel("顯示/隱藏")
 
             Button { (NSApp.delegate as? AppDelegate)?.showSettings() } label: {
                 Image(systemName: "gearshape").font(.system(size: 13)).foregroundColor(.secondary)
@@ -639,9 +639,9 @@ private struct FilterChip: View {
     var body: some View {
         Button(action: onRemove) {
             HStack(spacing: 4) {
-                Image(systemName: icon).font(.system(size: 9))
+                Image(systemName: icon).font(.system(size: 10))
                 Text(label).font(.system(size: 10, weight: .medium))
-                Image(systemName: "xmark").font(.system(size: 7, weight: .bold))
+                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
             }
             .padding(.horizontal, 8).padding(.vertical, 4)
         }
@@ -667,9 +667,9 @@ private struct EnvFilterPill: View {
         .buttonStyle(.plain)
         .focusEffectDisabled()
         .background(
-            Capsule().fill(isSelected ? env.color.fg.swiftUIColor.opacity(0.18) : Color.gray.opacity(0.12))
+            Capsule().fill(isSelected ? env.brandColor.opacity(0.18) : Color.gray.opacity(0.12))
         )
-        .foregroundColor(isSelected ? env.color.fg.swiftUIColor : .secondary)
+        .foregroundColor(isSelected ? env.brandColor : .secondary)
         .clipShape(Capsule())
     }
 }
@@ -717,7 +717,7 @@ struct TokenCard: View {
                     token.isDeleted
                         ? AnyShapeStyle(Color.gray.opacity(0.3))
                         : AnyShapeStyle(LinearGradient(
-                            colors: [token.tokenType.glassColor.swiftUIColor, token.tokenType.glassColor.swiftUIColor.opacity(0.4)],
+                            colors: [token.provider.color.swiftUIColor, token.provider.color.swiftUIColor.opacity(0.4)],
                             startPoint: .top, endPoint: .bottom))
                 )
                 .frame(width: DS.Card.accentBarWidth)
@@ -729,11 +729,11 @@ struct TokenCard: View {
                 RoundedRectangle(cornerRadius: 9)
                     .fill(token.isDeleted
                         ? Color.gray.opacity(0.06)
-                        : token.tokenType.glassColor.swiftUIColor.opacity(0.1))
+                        : token.provider.color.swiftUIColor.opacity(0.1))
                     .frame(width: DS.Card.iconSize, height: DS.Card.iconSize)
-                Image(systemName: token.isDeleted ? "trash.fill" : token.tokenType.icon)
+                Image(systemName: token.isDeleted ? "trash.fill" : token.provider.icon)
                     .font(.system(size: 14))
-                    .foregroundColor(token.isDeleted ? .gray.opacity(0.5) : token.tokenType.glassColor.swiftUIColor)
+                    .foregroundColor(token.isDeleted ? .gray.opacity(0.5) : token.provider.color.swiftUIColor)
             }
             .padding(.leading, 10)
 
@@ -746,18 +746,18 @@ struct TokenCard: View {
                         .layoutPriority(1)
                     if token.isFavorite {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 8)).foregroundColor(.orange)
+                            .font(.system(size: 10)).foregroundColor(.orange)
                     }
                     if !token.isDeleted {
                         Text(token.environment.rawValue)
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundColor(token.envColor)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(token.environment.brandColor)
                             .padding(.horizontal, 5).padding(.vertical, 1)
-                            .background(Capsule().fill(token.envColor.opacity(0.1)))
+                            .background(Capsule().fill(token.environment.brandColor.opacity(0.1)))
                     }
                     if token.isDeleted, let d = token.deletedAt {
                         Text("\(daysSince(d))天前刪除")
-                            .font(.system(size: 8, weight: .medium))
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.secondary.opacity(0.5))
                     }
                 }
@@ -813,14 +813,15 @@ struct TokenCard: View {
         } else {
             HStack(spacing: 4) {
                 if token.isDeleted {
-                    trailingBtn("arrow.uturn.backward", color: .blue) {
+                    trailingBtn("arrow.uturn.backward", label: "恢復", color: .blue) {
                         store.restoreToken(token)
                         ToastService.shared.show("已恢復「\(token.name)」", icon: "arrow.uturn.backward")
                     }
-                    trailingBtn("trash.slash", color: .red) { store.deleteToken(token) }
+                    trailingBtn("trash.slash", label: "永久刪除", color: .red) { store.deleteToken(token) }
                 } else {
                     // Copy
                     trailingBtn(copied ? "checkmark" : "doc.on.doc",
+                                label: "複製 Token",
                                 color: copied ? .green : .secondary) {
                         (NSApp.delegate as? AppDelegate)?.copyToken(token)
                         copied = true; copyFlashTrigger = true
@@ -829,11 +830,11 @@ struct TokenCard: View {
                     }
                     .symbolEffect(.bounce, value: copied)
                     // Edit
-                    trailingBtn("pencil", color: .secondary) { onEdit() }
+                    trailingBtn("pencil", label: "編輯", color: .secondary) { onEdit() }
                     // Open URL
-                    if token.tokenType.serviceURL != nil {
-                        trailingBtn("safari", color: .secondary) {
-                            if let u = token.tokenType.serviceURL { NSWorkspace.shared.open(u) }
+                    if token.provider.serviceURL != nil {
+                        trailingBtn("safari", label: "開啟控台", color: .secondary) {
+                            if let u = token.provider.serviceURL { NSWorkspace.shared.open(u) }
                         }
                     }
                     // More menu
@@ -856,6 +857,8 @@ struct TokenCard: View {
                             .background(Circle().fill(Color.primary.opacity(isHovering ? 0.06 : 0)))
                     }
                     .buttonStyle(.plain).focusEffectDisabled().menuIndicator(.hidden)
+                    .help("更多選項")
+                    .accessibilityLabel("更多選項")
                     .frame(width: 28)
                 }
             }
@@ -864,7 +867,7 @@ struct TokenCard: View {
         }
     }
 
-    private func trailingBtn(_ icon: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func trailingBtn(_ icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 11))
@@ -876,6 +879,8 @@ struct TokenCard: View {
                 )
         }
         .buttonStyle(.plain).focusEffectDisabled()
+        .help(label)
+        .accessibilityLabel(label)
         .opacity(isHovering ? 1.0 : 0.7)
         .animation(DS.Animation.easeOut, value: isHovering)
     }
@@ -901,9 +906,9 @@ struct TokenCard: View {
             Divider()
             Button { onEdit() } label: { Label("編輯", systemImage: "pencil") }
             Button { onDuplicate() } label: { Label("複製", systemImage: "plus.square.on.square") }
-            if token.tokenType.serviceURL != nil {
-                Button { if let u = token.tokenType.serviceURL { NSWorkspace.shared.open(u) } } label: {
-                    Label("開啟 \(token.tokenType.label) 控台", systemImage: "safari")
+            if token.provider.serviceURL != nil {
+                Button { if let u = token.provider.serviceURL { NSWorkspace.shared.open(u) } } label: {
+                    Label("開啟 \(token.provider.label) 控台", systemImage: "safari")
                 }
             }
             Divider()

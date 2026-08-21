@@ -9,11 +9,12 @@ enum TokenEnvironment: String, Codable, CaseIterable {
     case staging = "預發"
     case production = "正式"
 
-    var color: (bg: String, fg: String) {
+    /// 品牌色 — 環境 pill 的文字與強調色（明暗模式皆可讀）。
+    var brandColor: Color {
         switch self {
-        case .development: return ("#3B82F6", "#DBEAFE")   // blue
-        case .staging: return ("#F59E0B", "#FEF3C7")       // amber
-        case .production: return ("#EF4444", "#FEE2E2")     // red
+        case .development: return Color(red: 0.23, green: 0.51, blue: 0.96)   // #3B82F6
+        case .staging: return Color(red: 0.96, green: 0.62, blue: 0.04)       // #F59E0B
+        case .production: return Color(red: 0.94, green: 0.27, blue: 0.27)     // #EF4444
         }
     }
     var icon: String {
@@ -22,151 +23,6 @@ enum TokenEnvironment: String, Codable, CaseIterable {
         case .staging: return "testtube.2"
         case .production: return "shield.checkered"
         }
-    }
-}
-
-// MARK: - Token Type
-
-enum TokenType: String, Codable, CaseIterable {
-    case github, gitlab, aws, openai, cloudflare, slack, stripe, tailscale
-    case deepseek, claude, gemini, azure, google, vercel, supabase, huggingface, discord
-    case other
-
-    var label: String {
-        switch self {
-        case .github: return "GitHub"
-        case .gitlab: return "GitLab"
-        case .aws: return "AWS"
-        case .openai: return "OpenAI"
-        case .cloudflare: return "Cloudflare"
-        case .slack: return "Slack"
-        case .stripe: return "Stripe"
-        case .tailscale: return "Tailscale"
-        case .deepseek: return "DeepSeek"
-        case .claude: return "Claude"
-        case .gemini: return "Gemini"
-        case .azure: return "Azure"
-        case .google: return "Google Cloud"
-        case .vercel: return "Vercel"
-        case .supabase: return "Supabase"
-        case .huggingface: return "HuggingFace"
-        case .discord: return "Discord"
-        case .other: return "其他"
-        }
-    }
-    var icon: String {
-        switch self {
-        case .github: return "cat.fill"
-        case .gitlab: return "fox"
-        case .aws: return "cloud.fill"
-        case .openai: return "brain.fill"
-        case .cloudflare: return "globe"
-        case .slack: return "tag.fill"
-        case .stripe: return "creditcard.fill"
-        case .tailscale: return "point.3.connected.trianglepath.dotted"
-        case .deepseek: return "magnifyingglass.circle.fill"
-        case .claude: return "sparkles"
-        case .gemini: return "star.fill"
-        case .azure: return "building.2.fill"
-        case .google: return "g.circle.fill"
-        case .vercel: return "triangle.fill"
-        case .supabase: return "cylinder.fill"
-        case .huggingface: return "face.smiling.fill"
-        case .discord: return "message.fill"
-        case .other: return "key.fill"
-        }
-    }
-    var color: String {
-        switch self {
-        case .github: return "#8B5CF6"
-        case .gitlab: return "#FC6D26"
-        case .aws: return "#FF9900"
-        case .openai: return "#10A37F"
-        case .cloudflare: return "#F38020"
-        case .slack: return "#7C3AED"
-        case .stripe: return "#635BFF"
-        case .tailscale: return "#6B7280"
-        case .deepseek: return "#4F46E5"
-        case .claude: return "#D97706"
-        case .gemini: return "#4285F4"
-        case .azure: return "#0078D4"
-        case .google: return "#EA4335"
-        case .vercel: return "#171717"
-        case .supabase: return "#3ECF8E"
-        case .huggingface: return "#FFD21E"
-        case .discord: return "#5865F2"
-        case .other: return "#9CA3AF"
-        }
-    }
-
-    /// Refined display color for glass UI — slightly desaturated for modern aesthetic.
-    var glassColor: String {
-        switch self {
-        case .github: return "#7C5CBF"
-        case .gitlab: return "#E05D2E"
-        case .aws: return "#E68A00"
-        case .openai: return "#0E9270"
-        case .cloudflare: return "#E07520"
-        case .slack: return "#6E34B8"
-        case .stripe: return "#5850D8"
-        case .tailscale: return "#6B7280"
-        case .deepseek: return "#4338CA"
-        case .claude: return "#C2600E"
-        case .gemini: return "#3B77E0"
-        case .azure: return "#006CBE"
-        case .google: return "#D4382B"
-        case .vercel: return "#333333"
-        case .supabase: return "#35B87A"
-        case .huggingface: return "#E0B800"
-        case .discord: return "#4E5AD8"
-        case .other: return "#9CA3AF"
-        }
-    }
-    /// Service dashboard URL for this token type.
-    var serviceURL: URL? {
-        switch self {
-        case .github: return URL(string: "https://github.com/settings/tokens")
-        case .gitlab: return URL(string: "https://gitlab.com/-/user_settings/personal_access_tokens")
-        case .aws: return URL(string: "https://console.aws.amazon.com/iam/home#/security_credentials")
-        case .openai: return URL(string: "https://platform.openai.com/api-keys")
-        case .cloudflare: return URL(string: "https://dash.cloudflare.com/profile/api-tokens")
-        case .slack: return URL(string: "https://api.slack.com/apps")
-        case .stripe: return URL(string: "https://dashboard.stripe.com/apikeys")
-        case .tailscale: return URL(string: "https://login.tailscale.com/admin/settings/keys")
-        case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")
-        case .claude: return URL(string: "https://console.anthropic.com/keys")
-        case .gemini: return URL(string: "https://aistudio.google.com/apikey")
-        case .azure: return URL(string: "https://portal.azure.com/#view/Microsoft_AAD_IAM/TenantOverview.ReactView")
-        case .google: return URL(string: "https://console.cloud.google.com/apis/credentials")
-        case .vercel: return URL(string: "https://vercel.com/account/tokens")
-        case .supabase: return URL(string: "https://app.supabase.com/account/tokens")
-        case .huggingface: return URL(string: "https://huggingface.co/settings/tokens")
-        case .discord: return URL(string: "https://discord.com/developers/applications")
-        case .other: return nil
-        }
-    }
-
-    /// Auto-detect from token prefix / name
-    static func detect(from name: String, value: String) -> TokenType {
-        let q = "\(name) \(value.prefix(12))".lowercased()
-        if q.contains("ghp_") || q.contains("github") || q.contains("gho_") || q.contains("ghu_") { return .github }
-        if q.contains("glpat-") || q.contains("gitlab") { return .gitlab }
-        if q.contains("akia") || q.contains("aws") { return .aws }
-        if q.contains("sk-ant-") || q.contains("claude") || q.contains("anthropic") { return .claude }
-        if q.contains("gemini") || (q.contains("google") && q.contains("ai")) { return .gemini }
-        if q.contains("deepseek") { return .deepseek }
-        if q.contains("sk-") || q.contains("openai") { return .openai }
-        if q.contains("azure") { return .azure }
-        if q.contains("google") || q.contains("gcp") { return .google }
-        if q.contains("cloudflare") || q.contains("cf_") { return .cloudflare }
-        if q.contains("vercel") { return .vercel }
-        if q.contains("supabase") || q.contains("sb_") { return .supabase }
-        if q.contains("hf_") || q.contains("huggingface") { return .huggingface }
-        if q.contains("xoxb-") || q.contains("slack") { return .slack }
-        if q.contains("discord") { return .discord }
-        if q.contains("sk_live") || q.contains("sk_test") || q.contains("stripe") { return .stripe }
-        if q.contains("tskey-") || q.contains("tailscale") { return .tailscale }
-        return .other
     }
 }
 
@@ -200,7 +56,7 @@ final class TokenGroup: ObservableObject, Identifiable, Codable, Hashable {
     static func == (lhs: TokenGroup, rhs: TokenGroup) -> Bool { lhs.id == rhs.id }
 }
 
-// MARK: - Token Item  (Personal Secret Vault)
+// MARK: - Token Item
 
 final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     let id: UUID
@@ -208,10 +64,9 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     var encryptedValue: String
     @Published var note: String
     @Published var environment: TokenEnvironment
-    @Published var tokenType: TokenType
-    @Published var provider: SecretProvider
-    @Published var category: SecretCategory
-    @Published var secretType: SecretType
+    @Published var provider: TokenProvider
+    @Published var category: TokenCategory
+    @Published var kind: TokenKind
     @Published var tags: [String]
     @Published var expiresAt: Date?
     @Published var createdAt: Date
@@ -225,29 +80,28 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     @Published var customFields: [String: String]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, encryptedValue, note, environment, tokenType
-        case provider, category, secretType, tags, expiresAt, createdAt
+        case id, name, encryptedValue, note, environment
+        case provider, category, kind, tags, expiresAt, createdAt
         case lastUsedAt, deletedAt, copyCount, isFavorite, groupID
         case rotatedAt, rotationDueAt, customFields
+        // 舊版欄位，僅供讀取遷移
+        case tokenType, secretType
     }
 
     init(name: String, plainValue: String, note: String = "",
-         environment: TokenEnvironment = .production, tokenType: TokenType? = nil,
-         provider: SecretProvider? = nil, category: SecretCategory? = nil,
-         secretType: SecretType = .apiKey, tags: [String] = [],
+         environment: TokenEnvironment = .production, provider: TokenProvider? = nil,
+         category: TokenCategory? = nil, kind: TokenKind = .apiKey, tags: [String] = [],
          expiresAt: Date? = nil, groupID: UUID? = nil,
          customFields: [String: String] = [:]) {
-        let detectedType = tokenType ?? TokenType.detect(from: name, value: plainValue)
-        let detectedProvider = provider ?? SecretProvider.detect(from: name, value: plainValue)
+        let detectedProvider = provider ?? TokenProvider.detect(from: name, value: plainValue)
         self.id = UUID(); self.name = name; self.note = note
         self.environment = environment; self.expiresAt = expiresAt; self.createdAt = Date()
         self.lastUsedAt = nil; self.deletedAt = nil
         self.copyCount = 0; self.isFavorite = false; self.groupID = groupID
-        self.secretType = secretType
+        self.kind = kind
         self.tags = tags
         self.customFields = customFields
         self.rotatedAt = nil; self.rotationDueAt = nil
-        self.tokenType = detectedType
         self.provider = detectedProvider
         self.category = category ?? detectedProvider.category
         self.encryptedValue = (try? EncryptionService.encrypt(plainValue)) ?? plainValue
@@ -260,10 +114,12 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
         encryptedValue = try c.decode(String.self, forKey: .encryptedValue)
         note = try c.decode(String.self, forKey: .note)
         environment = (try? c.decode(TokenEnvironment.self, forKey: .environment)) ?? .production
-        tokenType = (try? c.decode(TokenType.self, forKey: .tokenType)) ?? .other
-        provider = (try? c.decode(SecretProvider.self, forKey: .provider)) ?? .custom
-        category = (try? c.decode(SecretCategory.self, forKey: .category)) ?? .other
-        secretType = (try? c.decode(SecretType.self, forKey: .secretType)) ?? .apiKey
+        provider = (try? c.decode(TokenProvider.self, forKey: .provider))
+            ?? TokenProvider.fromLegacyTokenType((try? c.decode(String.self, forKey: .tokenType)) ?? "")
+        category = (try? c.decode(TokenCategory.self, forKey: .category)) ?? .other
+        kind = (try? c.decode(TokenKind.self, forKey: .kind))
+            ?? (try? c.decode(TokenKind.self, forKey: .secretType))
+            ?? .apiKey
         tags = (try? c.decode([String].self, forKey: .tags)) ?? []
         expiresAt = try c.decodeIfPresent(Date.self, forKey: .expiresAt)
         createdAt = try c.decode(Date.self, forKey: .createdAt)
@@ -281,9 +137,9 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id); try c.encode(name, forKey: .name)
         try c.encode(encryptedValue, forKey: .encryptedValue); try c.encode(note, forKey: .note)
-        try c.encode(environment, forKey: .environment); try c.encode(tokenType, forKey: .tokenType)
-        try c.encode(provider, forKey: .provider); try c.encode(category, forKey: .category)
-        try c.encode(secretType, forKey: .secretType); try c.encode(tags, forKey: .tags)
+        try c.encode(environment, forKey: .environment); try c.encode(provider, forKey: .provider)
+        try c.encode(category, forKey: .category); try c.encode(kind, forKey: .kind)
+        try c.encode(tags, forKey: .tags)
         try c.encodeIfPresent(expiresAt, forKey: .expiresAt); try c.encode(createdAt, forKey: .createdAt)
         try c.encodeIfPresent(lastUsedAt, forKey: .lastUsedAt); try c.encodeIfPresent(deletedAt, forKey: .deletedAt)
         try c.encode(copyCount, forKey: .copyCount); try c.encode(isFavorite, forKey: .isFavorite)
@@ -309,13 +165,6 @@ final class TokenItem: ObservableObject, Identifiable, Codable, Equatable {
     var needsRotation: Bool {
         guard let due = rotationDueAt else { return false }
         return due < Date()
-    }
-    var envColor: Color {
-        switch environment {
-        case .development: return Color(red: 0.23, green: 0.51, blue: 0.96)
-        case .staging: return Color(red: 0.96, green: 0.62, blue: 0.04)
-        case .production: return Color(red: 0.94, green: 0.27, blue: 0.27)
-        }
     }
 
     /// Duplicate detection: check if plain value matches another token

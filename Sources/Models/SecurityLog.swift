@@ -2,14 +2,20 @@ import Foundation
 
 // MARK: - Security Audit Log
 
-/// Local-only audit trail for all secret access operations.
+/// Local-only audit trail for all token access operations.
 struct SecurityLogEntry: Identifiable, Codable, Equatable {
     let id: UUID
     let timestamp: Date
     let action: Action
-    let secretID: UUID
-    let secretName: String
+    let tokenID: UUID
+    let tokenName: String
     let provider: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, timestamp, action, provider
+        case tokenID = "secretID"
+        case tokenName = "secretName"
+    }
 
     enum Action: String, Codable, CaseIterable {
         case copied = "複製"
@@ -71,10 +77,10 @@ final class SecurityLogService: ObservableObject {
         load()
     }
 
-    func log(_ action: SecurityLogEntry.Action, secretID: UUID, name: String, provider: String) {
+    func log(_ action: SecurityLogEntry.Action, tokenID: UUID, name: String, provider: String) {
         let entry = SecurityLogEntry(
             id: UUID(), timestamp: Date(), action: action,
-            secretID: secretID, secretName: name, provider: provider
+            tokenID: tokenID, tokenName: name, provider: provider
         )
         entries.insert(entry, at: 0)
         if entries.count > maxEntries { entries = Array(entries.prefix(maxEntries)) }
@@ -86,8 +92,8 @@ final class SecurityLogService: ObservableObject {
         return entries.filter { cal.isDateInToday($0.timestamp) }
     }
 
-    func entries(for secretID: UUID) -> [SecurityLogEntry] {
-        entries.filter { $0.secretID == secretID }
+    func entries(for tokenID: UUID) -> [SecurityLogEntry] {
+        entries.filter { $0.tokenID == tokenID }
     }
 
     private func load() {

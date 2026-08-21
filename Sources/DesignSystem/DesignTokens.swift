@@ -69,10 +69,10 @@ enum DS {
         static let callout: Font = .system(size: 12, weight: .regular)
         static let caption: Font = .system(size: 11, weight: .regular)
         static let captionBold: Font = .system(size: 11, weight: .semibold)
-        static let tiny: Font = .system(size: 9, weight: .regular)
+        static let tiny: Font = .system(size: 10, weight: .regular)
         static let monospaced: Font = .system(size: 11, design: .monospaced)
         static let monospacedSmall: Font = .system(size: 10, design: .monospaced)
-        static let monospacedTiny: Font = .system(size: 9, design: .monospaced)
+        static let monospacedTiny: Font = .system(size: 10, design: .monospaced)
     }
 
     // MARK: - Corner Radius
