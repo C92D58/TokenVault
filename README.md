@@ -1,6 +1,6 @@
 # TokenVault
 
-### Open-source API token manager — built for developers
+### A private API token manager for macOS — built for my own use
 
 <p align="center">
   <img src="Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="TokenVault" width="128" />
@@ -8,7 +8,7 @@
 
 TokenVault is an **API secret manager designed for developers**. Unlike a general-purpose password manager, TokenVault is built around what developers actually need: environment labels (dev / staging / prod), automatic provider detection, a built-in JWT decoder, one-click token generation, and menu-bar quick copy — all protected with **AES-256-GCM encryption**.
 
-This is **open-source software** under the MIT license. Contributions and forks are welcome.
+This is a **private, personal project** — not open-source, not free, and not distributed. It is built for my own use and is not licensed for use, copying, modification or redistribution by anyone else.
 
 ---
 
@@ -64,24 +64,9 @@ This is **open-source software** under the MIT license. Contributions and forks 
 
 ---
 
-## Installation
+## Distribution
 
-### Build from source
-
-```bash
-git clone https://github.com/C92D58/TokenVault.git
-cd TokenVault
-bash build.sh
-```
-
-The built `TokenVault.app` is placed in `.build/`.
-
-### Install from DMG
-
-1. Download the latest `TokenVault-1.0.dmg` from the [Releases](https://github.com/C92D58/TokenVault/releases) page
-2. Open the DMG and drag `TokenVault.app` into `Applications`
-3. On first launch macOS may warn "cannot verify developer":
-   - Go to **System Settings → Privacy & Security** → click "Open Anyway"
+TokenVault is **not distributed** — no release, no download, no package. It is built and used only on my own machines.
 
 ---
 
@@ -174,11 +159,11 @@ TokenVault's encryption architecture:
 
 ## License
 
-MIT License
+**Proprietary — All Rights Reserved.**
 
 © 2026 WAHSUN
 
-This software is provided "as is", without warranty of any kind, express or implied. See the [LICENSE](LICENSE) file for details.
+This software is provided "as is", without warranty of any kind, express or implied. No part of it may be copied, modified, distributed, sublicensed or sold without prior written permission. See the [LICENSE](LICENSE) file for details.
 
 ---
 
