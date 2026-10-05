@@ -32,7 +32,7 @@
 | files.user-selected.read-write | 導入/匯出 |
 | network.client | GitHub 同步 |
 
-## 上架前你需要做的
+## 上架前準備事項
 
 1. **Apple Developer 帳號** ($99/年)
 2. **建立 Distribution 憑證** (Xcode → Settings → Accounts)

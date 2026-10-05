@@ -1,14 +1,22 @@
 # TokenVault
 
-### A private API token manager for macOS — built for my own use
+### An open-source API token manager for macOS — built for developers
 
 <p align="center">
   <img src="Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="TokenVault" width="128" />
 </p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey.svg" alt="Platform: macOS 14+">
+  <img src="https://img.shields.io/badge/UI-SwiftUI-orange.svg" alt="Built with SwiftUI">
+  <img src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" alt="Zero dependencies">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
+</p>
+
 TokenVault is an **API secret manager designed for developers**. Unlike a general-purpose password manager, TokenVault is built around what developers actually need: environment labels (dev / staging / prod), automatic provider detection, a built-in JWT decoder, one-click token generation, and menu-bar quick copy — all protected with **AES-256-GCM encryption**.
 
-This is a **private, personal project** — not open-source, not free, and not distributed. It is built for my own use and is not licensed for use, copying, modification or redistribution by anyone else.
+TokenVault is **free and open-source software**, released under the [MIT License](LICENSE). Contributions, forks and feedback are welcome.
 
 ---
 
@@ -33,7 +41,7 @@ This is a **private, personal project** — not open-source, not free, and not d
 
 ### 🧠 Built for developers
 
-- **Automatic detection of 21 providers** — OpenAI, GitHub, AWS, Azure, Google Cloud, Claude, Gemini, DeepSeek, Vercel, Supabase and more
+- **Automatic detection of 20 providers** — OpenAI, Claude, Gemini, DeepSeek, GitHub, GitLab, AWS, Azure, Google Cloud, Cloudflare, Telegram, Discord, Slack, Stripe, Tailscale, Apple, Docker, Vercel, Supabase, HuggingFace
 - **10 token categories** — AI, cloud, database, community, payments, SSH, JWT, certificates, servers, other
 - **10 credential formats** — API keys, OAuth tokens, SSH private keys, JWT, cookies, authorization headers, webhooks and more
 - **Environment labels** — Development / Staging / Production
@@ -64,9 +72,23 @@ This is a **private, personal project** — not open-source, not free, and not d
 
 ---
 
-## Distribution
+## Installation
 
-TokenVault is **not distributed** — no release, no download, no package. It is built and used only on my own machines.
+### Build from source
+
+```bash
+git clone https://github.com/C92D58/TokenVault.git
+cd TokenVault
+bash build.sh
+```
+
+The compiled `TokenVault.app` lands in `.build/`.
+
+### Download
+
+Download the latest `TokenVault-1.0.dmg` from [Releases](https://github.com/C92D58/TokenVault/releases), open it, and drag `TokenVault.app` into `Applications`.
+
+On first launch macOS may warn that the developer cannot be verified — go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ---
 
@@ -155,15 +177,24 @@ TokenVault's encryption architecture:
 
 > TokenVault **does not** use any remote server, analytics or third-party network service. Your data exists only on your device.
 
+Found a vulnerability? Please report it privately — see [SECURITY.md](SECURITY.md). Do not open a public issue.
+
+---
+
+## Contributing
+
+All contributions are welcome — bug reports, feature suggestions, pull requests.
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR
+- Building locally is one command: `bash build.sh` (no Xcode project file, zero dependencies)
+
 ---
 
 ## License
 
-**Proprietary — All Rights Reserved.**
+[MIT License](LICENSE) © 2026 WAHSUN
 
-© 2026 WAHSUN
-
-This software is provided "as is", without warranty of any kind, express or implied. No part of it may be copied, modified, distributed, sublicensed or sold without prior written permission. See the [LICENSE](LICENSE) file for details.
+This software is provided "as is", without warranty of any kind, express or implied.
 
 ---
 

@@ -41,11 +41,11 @@ struct AboutView: View {
                 }
             }
 
-            // Personal tool badge
+            // Open source badge
             VStack(spacing: 4) {
                 HStack(spacing: 4) {
-                    Image(systemName: "person.fill").font(.system(size: 10))
-                    Text("個人私用工具").font(.system(size: 11, weight: .medium))
+                    Image(systemName: "chevron.left.forwardslash.chevron.right").font(.system(size: 10))
+                    Text("開源 · MIT").font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(DS.Color.accent)
                 .padding(.horizontal, 14).padding(.vertical, 6)
