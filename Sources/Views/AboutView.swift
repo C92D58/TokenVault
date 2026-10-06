@@ -55,9 +55,19 @@ struct AboutView: View {
 
             Divider().frame(width: 200)
 
-            VStack(spacing: 6) {
-                Text("© 2026 WAHSUN").font(.system(size: 11, weight: .medium))
+            // Brand credit — TECXIA | DIGITAL STUDIO (the mark is drawn, not typeset).
+            HStack(spacing: 7) {
+                TCrossMark()
+                    .frame(width: 10, height: 10)
+                Text("TECXIA")
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.45))
+                    .frame(width: 1, height: 10)
+                Text("DIGITAL STUDIO")
             }
+            .font(.system(size: 11, weight: .medium))
+            .tracking(1.4)
+            .foregroundColor(.secondary)
 
         }
         .padding(30)
@@ -94,5 +104,43 @@ struct AboutView: View {
         .foregroundColor(color)
         .padding(.horizontal, 7).padding(.vertical, 3)
         .background(Capsule().fill(color.opacity(0.1)))
+    }
+}
+
+
+/// The TECXIA credit mark: the cross is not a letter — it is two Ts crossed,
+/// each diagonal stroke ending in its own bar (a cross potent, turned on its
+/// diagonal). Drawn, not typeset, so it is the same in every language.
+private struct TCrossMark: View {
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+            let lineWidth = w * 0.14
+            let inset = w * 0.09
+            let cap = w * 0.36
+            let style = StrokeStyle(lineWidth: lineWidth, lineCap: .butt)
+            var cross = Path()
+            cross.move(to: CGPoint(x: inset, y: inset))
+            cross.addLine(to: CGPoint(x: w - inset, y: h - inset))
+            cross.move(to: CGPoint(x: w - inset, y: inset))
+            cross.addLine(to: CGPoint(x: inset, y: h - inset))
+            context.stroke(cross, with: .foreground, style: style)
+            let arms: [(CGPoint, CGPoint)] = [
+                (CGPoint(x: inset, y: inset), CGPoint(x: w - inset, y: h - inset)),
+                (CGPoint(x: w - inset, y: h - inset), CGPoint(x: inset, y: inset)),
+                (CGPoint(x: w - inset, y: inset), CGPoint(x: inset, y: h - inset)),
+                (CGPoint(x: inset, y: h - inset), CGPoint(x: w - inset, y: inset)),
+            ]
+            for (tip, other) in arms {
+                let dx = tip.x - other.x, dy = tip.y - other.y
+                let length = max(1, (dx * dx + dy * dy).squareRoot())
+                let px = -dy / length, py = dx / length
+                var bar = Path()
+                bar.move(to: CGPoint(x: tip.x - px * cap / 2, y: tip.y - py * cap / 2))
+                bar.addLine(to: CGPoint(x: tip.x + px * cap / 2, y: tip.y + py * cap / 2))
+                context.stroke(bar, with: .foreground, style: style)
+            }
+        }
     }
 }

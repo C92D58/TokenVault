@@ -192,12 +192,13 @@ All contributions are welcome — bug reports, feature suggestions, pull request
 
 ## License
 
-[MIT License](LICENSE) © 2026 WAHSUN
+[MIT License](LICENSE)
 
 This software is provided "as is", without warranty of any kind, express or implied.
 
 ---
 
 <p align="center">
+  <img src="assets/tecxia-lockup.png" alt="TECXIA | DIGITAL STUDIO" width="280"><br><br>
   <sub>🔐 Security is no small matter</sub>
 </p>

@@ -29,7 +29,7 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>© 2026 WAHSUN — MIT License</string>
+    <string>TECXIA | DIGITAL STUDIO — MIT License</string>
     <key>NSFaceIDUsageDescription</key>
     <string>TokenVault 使用 Face ID / Touch ID 保護你的 API 密鑰。解鎖後才能存取 Token。未授權則無法使用 App。</string>
     <key>NSSupportsAutomaticTermination</key>

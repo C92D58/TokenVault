@@ -19,7 +19,7 @@
 | LSMinimumSystemVersion | 14.0 (arm64) |
 | LSApplicationCategoryType | public.app-category.developer-tools |
 | NSFaceIDUsageDescription | ✅ 完整說明 |
-| NSHumanReadableCopyright | © 2026 WAHSUN |
+| NSHumanReadableCopyright | TECXIA \| DIGITAL STUDIO — MIT License |
 | ITSAppUsesNonExemptEncryption | false |
 | CFBundleSpokenName | Token Vault |
 | CFBundleDocumentTypes | JSON 備份關聯 |

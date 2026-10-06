@@ -77,7 +77,7 @@ struct HelpView: View {
                 }
 
                 guideSection("資料隱私", icon: "eye.slash") {
-                    Text("TokenVault 開發者（WAHSUN）無法存取你的任何 Token。加密和解密完全在你的裝置上進行。我們沒有伺服器，無法查看你的數據。")
+                    Text("TokenVault 開發者（TECXIA）無法存取你的任何 Token。加密和解密完全在你的裝置上進行。我們沒有伺服器，無法查看你的數據。")
                 }
 
                 guideSection("生物識別", icon: "faceid") {
