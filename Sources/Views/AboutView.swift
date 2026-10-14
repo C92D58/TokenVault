@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AboutView: View {
     @State private var tapped = 0
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(spacing: 24) {
@@ -25,6 +26,11 @@ struct AboutView: View {
                     .font(.system(size: 22, weight: .bold))
                     .tracking(-0.5)
                 Text("版本 \(appVersion)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                // The same credit the apps carry in their About cards: the
+                // developer, in the app's own type. No address, no link.
+                Text("開發者 WAHSUN")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -56,18 +62,26 @@ struct AboutView: View {
             Divider().frame(width: 200)
 
             // Brand credit — TECXIA | DIGITAL STUDIO (the mark is drawn, not typeset).
-            HStack(spacing: 7) {
-                TCrossMark()
-                    .frame(width: 10, height: 10)
-                Text("TECXIA")
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.45))
-                    .frame(width: 1, height: 10)
-                Text("DIGITAL STUDIO")
+            Button {
+                if let url = URL(string: "https://tecxia.com") { openURL(url) }
+            } label: {
+                HStack(spacing: 7) {
+                    TCrossMark()
+                        .frame(width: 10, height: 10)
+                    Text("TECXIA")
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.45))
+                        .frame(width: 1, height: 10)
+                    Text("DIGITAL STUDIO")
+                }
             }
             .font(.system(size: 11, weight: .medium))
             .tracking(1.4)
             .foregroundColor(.secondary)
+            .buttonStyle(CreditPressStyle())
+            .accessibilityLabel("TECXIA | DIGITAL STUDIO")
+            .accessibilityIdentifier("creditMark")
+            .accessibilityHint("Opens the TECXIA website")
 
         }
         .padding(30)
@@ -142,5 +156,17 @@ private struct TCrossMark: View {
                 context.stroke(bar, with: .foreground, style: style)
             }
         }
+    }
+}
+
+
+/// The credit is also the doorway to the studio: pressing it dips, releasing
+/// opens tecxia.com. One style, so the press reads the same in every app.
+struct CreditPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(configuration.isPressed ? 0.55 : 1)
+            .animation(.spring(response: 0.26, dampingFraction: 0.72), value: configuration.isPressed)
     }
 }
