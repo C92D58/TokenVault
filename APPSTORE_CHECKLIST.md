@@ -40,11 +40,13 @@
    - Bundle ID: `org.wahsun.tokenvault`
    - 分類: Developer Tools
    - 定價: 免費
-4. **簽名改為 Developer ID**:
+4. **自動化發布與公證 (`publish.sh`)**:
+   專案已內建自動化發布腳本，會自動偵測 Keychain 中的 Developer ID 憑證、呼叫 `build.sh`、打包 DMG，並支援 Apple `notarytool` 進行官方公證：
    ```bash
-   codesign --force --deep --sign "Developer ID Application: WAHSUN (TEAMID)" \
-     --options runtime --entitlements Resources/TokenVault.entitlements \
-     --timestamp .build/TokenVault.app
+   export APPLE_ID='your@email.com'
+   export APPLE_TEAM_ID='YOUR_TEAM_ID'
+   export APPLE_APP_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
+   ./publish.sh
    ```
 5. **上傳到 App Store**:
    ```bash
