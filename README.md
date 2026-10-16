@@ -199,6 +199,5 @@ This software is provided "as is", without warranty of any kind, express or impl
 ---
 
 <p align="center">
-  <img src="assets/tecxia-lockup.png" alt="TECXIA | DIGITAL STUDIO" width="280"><br><br>
   <sub>🔐 Security is no small matter</sub>
 </p>
