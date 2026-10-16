@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AboutView: View {
     @State private var tapped = 0
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(spacing: 24) {
