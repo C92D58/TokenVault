@@ -27,9 +27,13 @@ struct AboutView: View {
                 Text("版本 \(appVersion)")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
-                Text("開發者：WAHSUN")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                HStack(spacing: 0) {
+                    Text("開發者：")
+                    Link("WAHSUN", destination: URL(string: "https://wahsun.org")!)
+                        .accessibilityIdentifier("developerLink")
+                }
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
                 Text("郵箱：x@wahsun.org")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
