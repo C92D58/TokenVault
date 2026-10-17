@@ -8,7 +8,7 @@ Only the latest release receives security fixes.
 
 If you discover a security vulnerability, please **do not** open a public issue.
 
-Prefer GitHub's [private vulnerability reporting](https://github.com/C92D58/TokenVault/security/advisories/new), or email **x@wahsun.org**.
+Prefer GitHub's [private vulnerability reporting](https://github.com/C92D58/TokenVault/security/advisories/new), or email **dev@wahsun.org**.
 
 Please include:
 
