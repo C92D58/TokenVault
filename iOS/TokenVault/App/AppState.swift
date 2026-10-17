@@ -7,11 +7,13 @@ struct LaunchOptions {
     var resetStore = false
     var seedDemo = false
     var startUnlocked = false
+    var stayLocked = false
 
     init(arguments: [String] = ProcessInfo.processInfo.arguments) {
         resetStore = arguments.contains("-uiTestReset")
         seedDemo = arguments.contains("-uiTestSeed")
         startUnlocked = arguments.contains("-uiTestUnlocked")
+        stayLocked = arguments.contains("-uiTestLocked")
     }
 }
 
@@ -35,7 +37,11 @@ final class AppState: ObservableObject {
         self.vault = VaultStore(reset: options.resetStore)
         self.settings = SettingsStore()
         if options.seedDemo { vault.seedDemoIfEmpty() }
-        if options.startUnlocked || !settings.biometricLock { isLocked = false }
+        if options.stayLocked {
+            isLocked = true
+        } else if options.startUnlocked || !settings.biometricLock {
+            isLocked = false
+        }
     }
 
     // MARK: - Lifecycle
@@ -43,7 +49,8 @@ final class AppState: ObservableObject {
     func prepare() async {
         guard !didPrepare else { return }
         didPrepare = true
-        if isLocked { await unlock() }
+        // Screenshot mode: stay on the branded lock screen, no system sheet on top of it.
+        if isLocked && !options.stayLocked { await unlock() }
         refreshReminders()
     }
 

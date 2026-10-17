@@ -223,7 +223,15 @@ struct SettingsView: View {
             SectionLabel("關於")
 
             HStack(spacing: Theme.Space.s) {
-                ProviderBadge(provider: .custom, size: 40)
+                Image("AppMark")
+                    .resizable()
+                    .frame(width: Theme.IconSize.badge + 4, height: Theme.IconSize.badge + 4)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Theme.hairlineStrong, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("TokenVault")
                         .font(Theme.cardTitle)

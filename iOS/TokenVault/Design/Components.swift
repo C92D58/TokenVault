@@ -314,12 +314,13 @@ struct SettingsRow<Trailing: View>: View {
     var body: some View {
         HStack(spacing: Theme.Space.s) {
             Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: Theme.IconSize.row * 0.47, weight: .semibold))
                 .foregroundStyle(tint)
-                .frame(width: 26, height: 26)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(tint.opacity(0.12)))
+                .frame(width: Theme.IconSize.row, height: Theme.IconSize.row)
+                .background(RoundedRectangle(cornerRadius: Theme.IconSize.row * 0.3, style: .continuous)
+                    .fill(tint.opacity(0.12)))
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(Theme.body)
                     .foregroundStyle(Theme.textPrimary)
@@ -330,7 +331,7 @@ struct SettingsRow<Trailing: View>: View {
             Spacer(minLength: Theme.Space.s)
             trailing()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
     }
 }
 

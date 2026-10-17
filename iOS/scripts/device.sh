@@ -21,10 +21,13 @@ set -euo pipefail
 DERIVED="${TV_DERIVED:-/tmp/tokenvault-ios-device-dd}"
 BUNDLE_ID="dev.wahsun.tokenvault"
 # The team that actually has a signed-in account in Xcode (Accounts settings) — read from Xcode's
-# own preferences instead of hardcoding, because the Keychain certificate's team can belong to a
-# different, older account and then provisioning fails with "No Account for Team …".
-TEAM="${TV_TEAM:-$(defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier 2>/dev/null \
-    | grep -m1 'teamID' | sed -E 's/.*teamID = ([A-Z0-9]+);.*/\1/')}"
+# own preferences instead of hardcoding. `grep -o` + `|| true` so a preferences format change
+# cannot kill the script under `set -euo pipefail` (it did: the pipeline returned no match).
+TEAM="${TV_TEAM:-}"
+if [ -z "$TEAM" ]; then
+    TEAM="$(defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier 2>/dev/null \
+        | grep -o 'teamID = [A-Z0-9]\{10\}' | head -1 | awk '{print $3}')" || true
+fi
 TEAM="${TEAM:-MAA6W8AG5P}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

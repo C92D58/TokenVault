@@ -61,16 +61,29 @@ enum Theme {
     static let danger = Color(red: 0.92, green: 0.29, blue: 0.29)
 
     // MARK: - Type
+    //
+    // One scale, used everywhere. Sizes step by ~1.2× from the title down to the caption, and
+    // every icon box is sized against the text it sits beside — a 26 pt box next to a 15 pt title
+    // reads smaller than a 42 pt badge next to a 16 pt one, which is exactly what made the
+    // settings cards look wrong next to the vault cards.
 
-    static let title = Font.system(size: 30, weight: .bold)
-    static let heading = Font.system(size: 19, weight: .semibold)
-    static let cardTitle = Font.system(size: 16, weight: .semibold)
-    static let body = Font.system(size: 15, weight: .regular)
+    static let title = Font.system(size: 28, weight: .bold)
+    static let heading = Font.system(size: 17.5, weight: .semibold)
+    static let cardTitle = Font.system(size: 15.5, weight: .semibold)
+    static let body = Font.system(size: 14.5, weight: .regular)
+    static let bodyMedium = Font.system(size: 14.5, weight: .medium)
     static let callout = Font.system(size: 13, weight: .regular)
-    static let label = Font.system(size: 12, weight: .medium)
+    static let label = Font.system(size: 12, weight: .semibold)
     static let caption = Font.system(size: 11, weight: .regular)
     static let mono = Font.system(size: 13, weight: .regular, design: .monospaced)
     static let monoSmall = Font.system(size: 11, weight: .regular, design: .monospaced)
+
+    /// Icon boxes: the glyph is ~47% of the box, the box ~2× the text size beside it.
+    enum IconSize {
+        static let row: CGFloat = 30
+        static let badge: CGFloat = 42
+        static let hero: CGFloat = 54
+    }
 
     // MARK: - Geometry
 

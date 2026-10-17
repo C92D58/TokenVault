@@ -208,6 +208,15 @@ final class TokenVaultUITests: XCTestCase {
         _ = app.staticTexts["settings.title"].waitForExistence(timeout: 8)
         capture(app, "05-settings")
 
+        // The appearance switch must take effect on the spot — same screen, no relaunch.
+        if app.buttons["深色"].exists {
+            app.buttons["深色"].tap()
+            capture(app, "05b-settings-dark")
+            app.buttons["淺色"].tap()
+            capture(app, "05c-settings-light")
+            app.buttons["跟隨系統"].tap()
+        }
+
         openTab(app, "日誌")
         usleep(900_000)
         capture(app, "06-log")

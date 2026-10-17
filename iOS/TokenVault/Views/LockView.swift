@@ -61,14 +61,16 @@ struct LockView: View {
                             .foregroundStyle(Theme.danger)
                     }
 
-                    Text("你的密鑰在這台裝置上以 AES-256-GCM 加密，金鑰存放於鑰匙圈，永遠不會上傳。")
+                    Text("密鑰以 AES-256-GCM 加密，金鑰存在鑰匙圈，永不上傳")
                         .font(Theme.caption)
-                        .foregroundStyle(Theme.textTertiary)
+                        .foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
-                        .padding(.top, Theme.Space.xs)
+                        .lineLimit(2)
+                        .frame(maxWidth: 300)
+                        .padding(.top, Theme.Space.xxs)
                 }
                 .padding(.horizontal, Theme.Space.xl)
-                .padding(.bottom, Theme.Space.xxl)
+                .padding(.bottom, Theme.Space.xl)
             }
         }
         .onAppear {

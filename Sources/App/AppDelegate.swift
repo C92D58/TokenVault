@@ -233,7 +233,7 @@ extension AppDelegate: NSApplicationDelegate {
             win.styleMask = [.titled, .closable, .fullSizeContentView]
             aboutWindow = win
             applyGlassStyle(aboutWindow, title: "關於 TokenVault",
-                            size: NSSize(width: 380, height: 420))
+                            size: NSSize(width: 420, height: 476))
             aboutWindow?.setFrameAutosaveName("TokenVaultAbout")
         }
         NSApp.activate(ignoringOtherApps: true); aboutWindow?.makeKeyAndOrderFront(nil)

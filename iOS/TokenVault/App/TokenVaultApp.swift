@@ -12,13 +12,13 @@ struct TokenVaultApp: App {
                 .environmentObject(app.settings)
                 .environmentObject(app.toast)
                 .tint(Theme.accent)
-                .preferredColorScheme(app.settings.appearance.colorScheme)
         }
     }
 }
 
 struct RootView: View {
     @EnvironmentObject private var app: AppState
+    @EnvironmentObject private var settings: SettingsStore
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -34,6 +34,9 @@ struct RootView: View {
             }
         }
         .animation(Theme.Motion.appear, value: app.isLocked)
+        // Applied here, not in the App struct: the App body never observes SettingsStore, so a
+        // colour-scheme change made in Settings would not re-render until something else moved.
+        .preferredColorScheme(settings.appearance.colorScheme)
         .overlay {
             if app.isShielded {
                 PrivacyShield()

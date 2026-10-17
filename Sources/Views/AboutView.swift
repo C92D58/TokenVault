@@ -1,99 +1,121 @@
 import SwiftUI
+import AppKit
 
+/// The About panel.
+///
+/// macOS answers one question here — what is this app and who made it — so the layout is a stack of
+/// three facts under the real app icon, and nothing else competes with them. (An in-app SF Symbol
+/// standing in for the icon is wrong: the About panel is the one place the icon should be itself.)
 struct AboutView: View {
     @State private var tapped = 0
 
+    private var appVersion: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "\(short) (\(build))"
+    }
+
+    /// The bundle's own icon — the same artwork as the .icns, never a substitute symbol.
+    private var appIcon: NSImage {
+        NSImage(named: NSImage.applicationIconName) ?? NSImage(size: NSSize(width: 128, height: 128))
+    }
+
     var body: some View {
-        VStack(spacing: 24) {
-            // App icon — glass card
-            ZStack {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color(.controlBackgroundColor))
-                    .frame(width: 84, height: 84)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.10), radius: 14, y: 5)
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 36))
+        VStack(spacing: 0) {
+            Image(nsImage: appIcon)
+                .resizable()
+                .frame(width: 96, height: 96)
+                .padding(.top, 32)
+                .onTapGesture { tapped += 1 }
+
+            Text("TokenVault")
+                .font(.system(size: 23, weight: .bold))
+                .tracking(-0.4)
+                .padding(.top, 14)
+
+            Text("版本 \(appVersion)")
+                .font(.system(size: 11.5))
+                .foregroundStyle(.secondary)
+                .padding(.top, 3)
+
+            Text("開發者的 API 密鑰保險庫")
+                .font(.system(size: 12.5))
+                .foregroundStyle(.secondary)
+                .padding(.top, 10)
+
+            VStack(spacing: 0) {
+                feature(symbol: "lock.fill", title: "AES-256-GCM",
+                        detail: "每個值獨立加密，金鑰存在鑰匙圈")
+                hairline
+                feature(symbol: "faceid", title: "Face ID / Touch ID",
+                        detail: "解鎖 App 才看得到內容")
+                hairline
+                feature(symbol: "icloud.fill", title: "iCloud Drive 同步",
+                        detail: "只同步密文，金鑰不離開這台裝置")
+            }
+            .padding(.top, 22)
+            .padding(.horizontal, 26)
+
+            Spacer(minLength: 12)
+
+            VStack(spacing: 7) {
+                Text(tapped >= 5 ? "🔐 安全無小事" : " ")
+                    .font(.system(size: 10.5))
                     .foregroundStyle(DS.Color.accentGradient)
-            }
-
-            VStack(spacing: 4) {
-                Text("TokenVault")
-                    .font(.system(size: 22, weight: .bold))
-                    .tracking(-0.5)
-                Text("版本 \(appVersion)")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
-                HStack(spacing: 0) {
-                    Text("開發者：")
-                    Link("WAHSUN", destination: URL(string: "https://wahsun.org")!)
-                        .accessibilityIdentifier("developerLink")
-                }
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
-            }
-
-            VStack(spacing: 6) {
-                Text("API Token 管理器")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .frame(height: 12)
 
                 HStack(spacing: 6) {
-                    badge("AES-256", icon: "lock.fill", color: .green)
-                    badge("iCloud", icon: "icloud.fill", color: .blue)
-                    badge("Face ID", icon: "faceid", color: .orange)
+                    Text("開發者")
+                        .foregroundStyle(.secondary)
+                    Link("WAHSUN", destination: URL(string: "https://wahsun.org")!)
+                        .accessibilityIdentifier("developerLink")
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text("MIT 授權")
+                        .foregroundStyle(.tertiary)
                 }
+                .font(.system(size: 11))
             }
-
-            // Open source badge
-            VStack(spacing: 4) {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left.forwardslash.chevron.right").font(.system(size: 10))
-                    Text("開源 · MIT").font(.system(size: 11, weight: .medium))
-                }
-                .foregroundColor(DS.Color.accent)
-                .padding(.horizontal, 14).padding(.vertical, 6)
-                .background(Capsule().fill(DS.Color.accent.opacity(0.1)))
-                .overlay(Capsule().stroke(DS.Color.accent.opacity(0.2), lineWidth: 1))
-            }
-
+            .padding(.bottom, 22)
         }
-        .padding(30)
-        .frame(width: 380, height: 420)
+        .frame(width: 420, height: 476)
         .background(
             ZStack {
-                Color(.controlBackgroundColor)
-                DS.Color.accentGradientSubtle.opacity(0.5)
+                Rectangle().fill(.regularMaterial)
+                DS.Color.accentGradientSubtle.opacity(0.45)
+                    .allowsHitTesting(false)
             }
         )
-        .background(.ultraThinMaterial)
-        .onTapGesture { tapped += 1 }
-        .overlay(alignment: .bottom) {
-            if tapped >= 5 {
-                Text("🔐 安全無小事")
-                    .font(.system(size: 10))
-                    .foregroundStyle(DS.Color.accentGradient)
-                    .padding(.bottom, 10)
-                    .transition(.scale.combined(with: .opacity))
+        .animation(.spring(response: 0.32, dampingFraction: 0.8), value: tapped)
+    }
+
+    private var hairline: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.08))
+            .frame(height: 1)
+    }
+
+    private func feature(symbol: String, title: String, detail: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(DS.Color.accent)
+                .frame(width: 26, height: 26)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(DS.Color.accent.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 12.5, weight: .medium))
+                Text(detail)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
+            Spacer(minLength: 0)
         }
-        .animation(.spring(response: 0.3), value: tapped)
-    }
-
-    private var appVersion: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
-    }
-
-    private func badge(_ text: String, icon: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 9))
-            Text(text).font(.system(size: 10, weight: .medium))
-        }
-        .foregroundColor(color)
-        .padding(.horizontal, 7).padding(.vertical, 3)
-        .background(Capsule().fill(color.opacity(0.1)))
+        .padding(.vertical, 9)
     }
 }
