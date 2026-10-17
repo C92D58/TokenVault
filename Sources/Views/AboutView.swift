@@ -34,9 +34,6 @@ struct AboutView: View {
                 }
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
-                Text("郵箱：dev@wahsun.org")
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
             }
 
             VStack(spacing: 6) {
