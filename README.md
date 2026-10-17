@@ -1,6 +1,6 @@
 # TokenVault
 
-### An open-source API token manager for macOS — built for developers
+### An open-source API token manager for macOS and iOS — built for developers
 
 <p align="center">
   <img src="Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="TokenVault" width="128" />
@@ -8,13 +8,15 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey.svg" alt="Platform: macOS 14+">
+  <img src="https://img.shields.io/badge/platform-macOS%2014%2B%20%7C%20iOS%2018%2B-lightgrey.svg" alt="Platform: macOS 14+ / iOS 18+">
   <img src="https://img.shields.io/badge/UI-SwiftUI-orange.svg" alt="Built with SwiftUI">
   <img src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" alt="Zero dependencies">
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
 TokenVault is an **API secret manager designed for developers**. Unlike a general-purpose password manager, TokenVault is built around what developers actually need: environment labels (dev / staging / prod), automatic provider detection, a built-in JWT decoder, one-click token generation, and menu-bar quick copy — all protected with **AES-256-GCM encryption**.
+
+The same vault now lives on your phone: the iOS build (see [`iOS/`](iOS/)) shares the data model, the crypto and the JSON file format with the Mac app, and adds Face ID unlock, swipe-to-copy, a generator and a JWT decoder built for one-handed use.
 
 TokenVault is **free and open-source software**, released under the [MIT License](LICENSE). Contributions, forks and feedback are welcome.
 
@@ -24,6 +26,7 @@ TokenVault is **free and open-source software**, released under the [MIT License
 
 - **Platform:** macOS 14.0 (Sonoma) or later
 - **Architecture:** Apple Silicon (arm64)
+- **iOS:** iOS 18.0 or later (iPhone, Xcode 26+ to build)
 - **Unlock:** Face ID / Touch ID (or device password)
 
 ---
@@ -83,6 +86,18 @@ bash build.sh
 ```
 
 The compiled `TokenVault.app` lands in `.build/`.
+
+### Build the iOS app
+
+```bash
+cd iOS
+./build.sh          # builds, installs and launches on a simulator
+./verify.sh         # runs the acceptance suite (XCUITest)
+./scripts/device.sh # installs on a connected iPhone
+```
+
+See [`iOS/README.md`](iOS/README.md) for the screens, the test list and how secrets move between
+the two builds.
 
 ### Download
 
@@ -152,14 +167,16 @@ On first launch macOS may warn that the developer cannot be verified — go to *
 ```
 TokenVault/
 ├── Sources/
-│   ├── App/              # app entry + AppDelegate
+│   ├── App/              # macOS app entry + AppDelegate
+│   ├── Core/             # SHARED with iOS: models, AES-GCM, Keychain, import/export, health checks
 │   ├── DesignSystem/     # design system (tokens, materials, effects)
-│   ├── Models/           # data models (token, category, security record)
-│   ├── Services/         # service layer (crypto, storage, health checks, etc.)
-│   └── Views/            # view layer (main screen, editor, settings, etc.)
+│   ├── Services/         # macOS services (store, clipboard, settings, backup, auth)
+│   └── Views/            # macOS view layer (main screen, editor, settings, etc.)
+├── iOS/                  # iOS app: Xcode project, views, UI-test suite, build scripts
+├── scripts/make-icon.swift  # one icon design, macOS + iOS framings
 ├── Assets.xcassets/      # app icons & color assets
-├── Resources/            # Info.plist, entitlements
-├── build.sh              # build script
+├── Resources/            # Info.plist, entitlements, .icns
+├── build.sh              # macOS build script
 └── package.sh            # DMG packaging script
 ```
 

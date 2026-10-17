@@ -1,27 +1,48 @@
 import Foundation
 import Security
 
-/// Secure Enclave-backed Keychain operations.
+/// Keychain-backed storage for the master AES key.
+///
+/// iOS has no `kSecAttrKeyTypeAES` item class, so the same 32 bytes are stored there as a generic
+/// password keyed by application tag. macOS keeps its original key-class items, so keys created by
+/// earlier builds are still found.
 enum KeychainService {
-    private static func query(tag: Data) -> [String: Any] {
+    private static let account = "org.wahsun.tokenvault.masterkey"
+
+    #if os(iOS)
+    private static func baseQuery(tag: Data) -> [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: tag,
+            kSecAttrAccount as String: account,
+        ]
+    }
+    #else
+    private static func baseQuery(tag: Data) -> [String: Any] {
         [
             kSecClass as String: kSecClassKey,
             kSecAttrApplicationTag as String: tag,
             kSecAttrKeyType as String: kSecAttrKeyTypeAES,
-            kSecReturnData as String: true,
         ]
+    }
+    #endif
+
+    private static func query(tag: Data) -> [String: Any] {
+        var query = baseQuery(tag: tag)
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        return query
     }
 
     /// Store raw AES key data in Keychain.
     static func write(tag: Data, data: Data) throws {
-        let addQuery: [String: Any] = [
-            kSecClass as String: kSecClassKey,
-            kSecAttrApplicationTag as String: tag,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-        ]
         // Delete existing
-        SecItemDelete(addQuery as CFDictionary)
+        SecItemDelete(baseQuery(tag: tag) as CFDictionary)
+
+        var addQuery = baseQuery(tag: tag)
+        addQuery[kSecValueData as String] = data
+        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+
         let status = SecItemAdd(addQuery as CFDictionary, nil)
         guard status == errSecSuccess else {
             throw KeychainError.unexpected(status)

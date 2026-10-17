@@ -96,6 +96,13 @@ final class SecurityLogService: ObservableObject {
         entries.filter { $0.tokenID == tokenID }
     }
 
+    /// Wipe the local audit trail. The macOS build has no clear button; the phone does, because a
+    /// 500-entry log is a screen you scroll rather than a list you read.
+    func clear() {
+        entries.removeAll()
+        save()
+    }
+
     private func load() {
         guard let data = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([SecurityLogEntry].self, from: data) else { return }
