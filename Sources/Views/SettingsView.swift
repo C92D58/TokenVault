@@ -86,11 +86,12 @@ struct SettingsView: View {
                 Section {
                     Toggle("iCloud 自動備份", isOn: $settings.iCloudBackupEnabled)
                         .onChange(of: settings.iCloudBackupEnabled) { _, on in
-                            ICloudBackupService.shared.refreshStatus(enabled: on)
+                            backupService.refreshStatus(enabled: on)
                             if on, let store = liveStore {
-                                ICloudBackupService.shared.backup(tokens: store.allTokens, force: true)
+                                backupService.backup(tokens: store.allTokens, force: true)
                             }
                         }
+                        .onAppear { backupService.refreshStatus(enabled: settings.iCloudBackupEnabled) }
 
                     Text(backupService.status.summary)
                         .font(.system(size: 10))

@@ -79,7 +79,7 @@ final class ICloudBackupService: ObservableObject {
     func refreshStatus(enabled: Bool) {
         guard enabled else { status = .disabled; return }
         if backupDirectory == nil {
-            status = .unavailable("iCloud 無法使用：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
+            status = .unavailable("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
         } else {
             status = .idle(lastBackup ?? newestBackupDate())
         }
@@ -96,7 +96,7 @@ final class ICloudBackupService: ObservableObject {
     /// Writes one encrypted snapshot. Cheap enough to call on every change; throttled internally.
     func backup(tokens: [TokenItem], force: Bool = false) {
         guard let dir = backupDirectory else {
-            status = .unavailable("iCloud 無法使用：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
+            status = .unavailable("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
             return
         }
         if !force, let lastWrite, Date().timeIntervalSince(lastWrite) < minimumInterval { return }

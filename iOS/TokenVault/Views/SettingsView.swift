@@ -214,6 +214,7 @@ struct SettingsView: View {
                     }
             }
             .accessibilityIdentifier("settings.icloud")
+            .onAppear { icloudBackup.refreshStatus(enabled: settings.iCloudBackup) }
         }
         .cardSurface(padding: Theme.Space.m)
     }
