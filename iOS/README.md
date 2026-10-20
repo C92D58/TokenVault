@@ -30,7 +30,7 @@ group. One copy of the crypto, not two.
 ./build.sh              # iPhone 18 Pro simulator, installed and launched
 ./build.sh --clean      # wipe the vault first
 ./verify.sh             # acceptance suite (~4 min); screenshots land in the xcresult
-./scripts/device.sh     # a connected iPhone, signed with the free Apple ID in Xcode
+./scripts/device.sh     # a connected iPhone, signed with team MAA6W8AG5P in Xcode
 ```
 
 The icon is generated, never hand-edited:

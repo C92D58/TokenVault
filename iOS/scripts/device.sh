@@ -5,8 +5,8 @@
 #   ./scripts/device.sh                 # first physical iPhone found
 #   TV_DEVICE_ID=00008120-000A64D00E87A01E ./scripts/device.sh
 #
-# Signing is a free Apple ID: Xcode ▸ Settings ▸ Accounts ▸ + ▸ Apple ID, signed in with
-# x@wahsun.org (team DTB35ZYC7C). Automatic signing mints the profile; -allowProvisioningUpdates
+# Signing uses the paid team MAA6W8AG5P (Apple ID wahsun@vip.qq.com), signed in under
+# Xcode ▸ Settings ▸ Accounts. Automatic signing mints the profile; -allowProvisioningUpdates
 # is passed so no clicking in Signing & Capabilities is needed. Without the account the build
 # stops with "No Accounts"; a team mismatch stops with "does not support provisioning".
 #
@@ -14,7 +14,7 @@
 #   • Settings ▸ Privacy & Security ▸ Developer Mode ▸ on (the phone reboots).
 #   • Plug in, unlock, tap "Trust This Computer".
 #
-# A free account's profile lasts 7 days — re-run this script to renew it.
+# The profile lasts a year (paid team) — re-run this script before it expires.
 #
 set -euo pipefail
 
