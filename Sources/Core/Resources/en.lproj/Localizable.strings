@@ -273,7 +273,7 @@
 "支援 .env / .csv / .json" = "Supports .env / .csv / .json";
 "支援 macOS 版匯出的加密 JSON 備份、.env 環境檔，以及 CSV（名稱,值,備註,環境）。" = "Supports encrypted JSON backups exported by the macOS app, .env files, and CSV (name,value,note,environment).";
 "收復" = "Restore";
-"收藏" = "Favourite";
+"收藏" = "Favourites";
 "數位憑證" = "Digital certificate";
 "新增" = "Add";
 "新增 %lld" = "Added %lld";

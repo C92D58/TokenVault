@@ -18,6 +18,12 @@ struct Shot {
     let maxHeight: CGFloat
 }
 
+let englishTitles = [
+    "01-main.png": ("Every API key in one place", "AES-256 encryption · Touch ID · iCloud backup"),
+    "03-lock.png": ("Nobody gets in without you", "AES-256-GCM · key in the keychain · auto-lock"),
+    "04-about.png": ("Built for developers", "Native SwiftUI · zero dependencies · MIT"),
+]
+
 let shots: [Shot] = [
     .init(file: "01-main.png", title: "所有 API 密鑰，一個地方",
           subtitle: "AES-256 加密 · Touch ID 解鎖 · iCloud 自動備份", maxHeight: 1390),
@@ -26,6 +32,8 @@ let shots: [Shot] = [
     .init(file: "04-about.png", title: "為開發者而做",
           subtitle: "原生 SwiftUI · 零依賴 · 開源 MIT", maxHeight: 1180),
 ]
+
+let useEnglish = CommandLine.arguments.count >= 4 && CommandLine.arguments[3] == "en"
 
 guard CommandLine.arguments.count >= 3 else {
     print("usage: make-macos-store-shots.swift <raw-dir> <out-dir>")
@@ -143,5 +151,10 @@ func compose(_ shot: Shot, index: Int) -> Bool {
 }
 
 var made = 0
-for (i, shot) in shots.enumerated() where compose(shot, index: i) { made += 1 }
+for (i, var shot) in shots.enumerated() {
+    if useEnglish, let titles = englishTitles[shot.file] {
+        shot = Shot(file: shot.file, title: titles.0, subtitle: titles.1, maxHeight: shot.maxHeight)
+    }
+    if compose(shot, index: i) { made += 1 }
+}
 print("done: \(made)/\(shots.count)")
