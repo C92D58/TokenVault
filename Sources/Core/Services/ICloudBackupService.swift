@@ -117,8 +117,10 @@ final class ICloudBackupService: ObservableObject {
             lastBackup = Date()
             status = .idle(lastBackup)
             prune(in: dir)
+            print("[backup] wrote \(url.path) tokens=\(tokens.count) bytes=\(combined.count)")
         } catch {
             status = .failed(error.localizedDescription)
+            print("[backup] failed: \(error.localizedDescription)")
         }
     }
 
