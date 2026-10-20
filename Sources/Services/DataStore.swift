@@ -29,8 +29,26 @@ final class DataStore: ObservableObject {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("tokens.json")
 
+        // Existing installs wrote into `~/Library/Mobile Documents/…/TokenVault` (the real iCloud
+        // Drive when unsigned, a look-alike folder inside the container when sandboxed). Adopt that
+        // file once so nobody opens the new build to an empty vault.
+        migrateLegacyVaultIfNeeded(to: fileURL)
+
         load()
         rebuildSubscriptions()
+    }
+
+    private func migrateLegacyVaultIfNeeded(to destination: URL) {
+        guard !FileManager.default.fileExists(atPath: destination.path) else { return }
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let candidates = [
+            home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs/TokenVault/tokens.json"),
+            home.appendingPathComponent("Library/Containers/org.wahsun.tokenvault/Data/Library/Mobile Documents/com~apple~CloudDocs/TokenVault/tokens.json"),
+        ]
+        for source in candidates where FileManager.default.fileExists(atPath: source.path) {
+            try? FileManager.default.copyItem(at: source, to: destination)
+            return
+        }
     }
 
     // MARK: - Persistence
