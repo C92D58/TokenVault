@@ -39,21 +39,4 @@ enum EncryptionService {
         let data = try AES.GCM.open(sealed, using: key)
         return String(data: data, encoding: .utf8) ?? ciphertext
     }
-
-    /// Re-encrypt all tokens (key rotation).
-    static func reEncrypt(tokens: [TokenItem]) throws {
-        let oldKey = try masterKey()
-        let newKey = SymmetricKey(size: .bits256)
-
-        for token in tokens {
-            let plain = try AES.GCM.open(
-                try AES.GCM.SealedBox(combined: Data(base64Encoded: token.encryptedValue)!),
-                using: oldKey
-            )
-            let sealed = try AES.GCM.seal(plain, using: newKey)
-            token.encryptedValue = sealed.combined!.base64EncodedString()
-        }
-
-        try KeychainService.write(tag: keyTag, data: newKey.withUnsafeBytes { Data($0) })
-    }
 }

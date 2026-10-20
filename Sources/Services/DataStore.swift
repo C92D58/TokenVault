@@ -18,18 +18,16 @@ final class DataStore: ObservableObject {
     private var saveWorkItem: DispatchWorkItem?
 
     init() {
-        let icloud = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs/TokenVault")
-        try? FileManager.default.createDirectory(at: icloud, withIntermediateDirectories: true)
-
-        fileURL = FileManager.default.isWritableFile(atPath: icloud.path)
-            ? icloud.appendingPathComponent("tokens.json")
-            : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-                .appendingPathComponent("TokenVault/tokens.json")
-
-        // Ensure directory exists for fallback
-        try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true)
+        // Inside the app's own Application Support directory.
+        //
+        // The App Store build is sandboxed, so the old "write into ~/Library/Mobile Documents/
+        // com~apple~CloudDocs/TokenVault" path was not the real iCloud Drive — it silently created a
+        // look-alike folder inside the container, which is why the iCloud toggle did nothing. Moves
+        // between devices go through the export/import paths (encrypted JSON, .env, CSV) instead.
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let directory = support.appendingPathComponent("TokenVault", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        fileURL = directory.appendingPathComponent("tokens.json")
 
         load()
         rebuildSubscriptions()

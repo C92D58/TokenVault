@@ -69,11 +69,10 @@ struct SettingsView: View {
         ScrollView {
             Form {
                 Section {
-                    Toggle("iCloud 同步", isOn: $settings.useICloud)
-                    Text("開啟後數據自動同步到 iCloud Drive，所有 Apple 裝置共享。數據已 AES-256 加密。")
+                    Text("Vault 存在 App 的 Application Support 目錄，整份以 AES-256-GCM 加密。跨裝置請用「匯出加密備份」再匯入。")
                         .font(.system(size: 10)).foregroundColor(.secondary)
                 } header: {
-                    Text("iCloud").font(.system(size: 11, weight: .semibold))
+                    Text("本機儲存").font(.system(size: 11, weight: .semibold))
                 }
 
                 Section {
@@ -153,7 +152,7 @@ struct SettingsView: View {
                     HStack {
                         Text("儲存位置")
                         Spacer()
-                        Text(settings.useICloud ? "iCloud Drive" : "本機")
+                        Text("本機")
                             .font(.system(size: 11)).foregroundColor(.secondary)
                     }
                 } header: {

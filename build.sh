@@ -33,6 +33,11 @@ actool "$ASSETS" --compile "$BUNDLE/Contents/Resources" \
 
 cp "$RES/Info.plist" "$BUNDLE/Contents/Info.plist"
 
+# Privacy manifest — App Store Connect rejects uploads (ITMS-91053) without it.
+if [ -f "$RES/PrivacyInfo.xcprivacy" ]; then
+  cp "$RES/PrivacyInfo.xcprivacy" "$BUNDLE/Contents/Resources/PrivacyInfo.xcprivacy"
+fi
+
 # Embed provisioning profile if exists
 if [ -f "$RES/embedded.provisionprofile" ]; then
   cp "$RES/embedded.provisionprofile" "$BUNDLE/Contents/embedded.provisionprofile"

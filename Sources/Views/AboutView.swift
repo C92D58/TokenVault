@@ -72,6 +72,9 @@ struct AboutView: View {
                         .accessibilityIdentifier("developerLink")
                     Text("·")
                         .foregroundStyle(.tertiary)
+                    Link("隱私政策", destination: URL(string: "https://privacy.wahsun.org/")!)
+                    Text("·")
+                        .foregroundStyle(.tertiary)
                     Text("MIT 授權")
                         .foregroundStyle(.tertiary)
                 }

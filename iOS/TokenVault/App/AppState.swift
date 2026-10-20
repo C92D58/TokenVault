@@ -9,6 +9,10 @@ struct LaunchOptions {
     var startUnlocked = false
     var stayLocked = false
 
+    /// Any UI-test launch. Used to skip one-time system prompts (notification permission) that
+    /// would otherwise cover the screen and make the suite non-deterministic.
+    var isUITest: Bool { resetStore || seedDemo || startUnlocked || stayLocked }
+
     init(arguments: [String] = ProcessInfo.processInfo.arguments) {
         resetStore = arguments.contains("-uiTestReset")
         seedDemo = arguments.contains("-uiTestSeed")
@@ -51,6 +55,8 @@ final class AppState: ObservableObject {
         didPrepare = true
         // Screenshot mode: stay on the branded lock screen, no system sheet on top of it.
         if isLocked && !options.stayLocked { await unlock() }
+        // 到期提醒預設開啟，但權限只有在設定頁被動打開過才會請求；不主動要一次，提醒永遠不會出現。
+        if settings.expiryReminders && !options.isUITest { NotificationService.requestPermission() }
         refreshReminders()
     }
 

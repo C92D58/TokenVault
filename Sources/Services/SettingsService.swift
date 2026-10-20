@@ -9,9 +9,6 @@ enum AppearanceMode: String, CaseIterable {
 final class SettingsService: ObservableObject {
     static let shared = SettingsService()
 
-    @Published var useICloud: Bool {
-        didSet { UserDefaults.standard.set(useICloud, forKey: "use_icloud") }
-    }
     @Published var appearanceMode: AppearanceMode {
         didSet { UserDefaults.standard.set(appearanceMode.rawValue, forKey: "appearance") }
     }
@@ -33,7 +30,6 @@ final class SettingsService: ObservableObject {
 
     init() {
         let d = UserDefaults.standard
-        useICloud = d.object(forKey: "use_icloud") as? Bool ?? true
         appearanceMode = AppearanceMode(rawValue: d.string(forKey: "appearance") ?? "") ?? .system
         clipboardClearSeconds = d.object(forKey: "clipboard_clear") as? Int ?? 45
         autoLockEnabled = d.object(forKey: "auto_lock") as? Bool ?? true

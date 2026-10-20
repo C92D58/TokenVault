@@ -250,6 +250,13 @@ struct SettingsView: View {
                 }
             }
             .buttonStyle(.plain)
+
+            Link(destination: URL(string: "https://privacy.wahsun.org/")!) {
+                SettingsRow(symbol: "hand.raised", title: "隱私政策", detail: "privacy.wahsun.org") {
+                    Chevron()
+                }
+            }
+            .buttonStyle(.plain)
         }
         .cardSurface(padding: Theme.Space.m)
     }

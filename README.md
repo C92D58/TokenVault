@@ -59,12 +59,13 @@ TokenVault is **free and open-source software**, released under the [MIT License
 - **⌘K Spotlight search** — find tokens instantly
 - **Keyboard-shortcut HUD** — hold ⌘ for 1.5 s to see every shortcut
 
-### 🔄 Flexible sync & backup
+### 🔄 Backup & transfer
 
-- **iCloud Drive sync** — automatic across Macs (optional)
-- **GitHub private-repo backup** — encrypted backup to your own private repo (optional)
+- **Local-first storage** — the vault lives inside the app's own Application Support directory,
+  encrypted; nothing is uploaded anywhere
+- **Encrypted backups** — export an AES-256-GCM JSON backup, or `.env` / CSV for other tools
 - **Multi-format import** — `.env`, CSV, JSON backups, manual paste, drag & drop
-- **Multi-format export** — encrypted JSON backups, `.env`, CSV
+- **GitHub private-repo backup** (macOS) — encrypted backup to your own private repo (optional)
 
 ### 🎨 Native macOS experience
 
