@@ -111,9 +111,9 @@ struct AboutView: View {
                 )
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                Text(L(title))
                     .font(.system(size: 12.5, weight: .medium))
-                Text(detail)
+                Text(L(detail))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

@@ -114,7 +114,7 @@ struct HelpView: View {
 
     private func guideSection(_ title: String, icon: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: icon)
+            Label(L(title), systemImage: icon)
                 .font(.system(size: 13, weight: .bold))
             VStack(alignment: .leading, spacing: 4) {
                 content()

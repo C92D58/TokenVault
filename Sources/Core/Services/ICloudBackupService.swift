@@ -23,15 +23,15 @@ final class ICloudBackupService: ObservableObject {
 
         var summary: String {
             switch self {
-            case .disabled: return "未啟用"
+            case .disabled: return L("未啟用")
             case .unavailable(let why): return why
             case .idle(let date):
-                guard let date else { return "已啟用，等待第一次備份" }
+                guard let date else { return L("已啟用，等待第一次備份") }
                 let f = DateFormatter()
                 f.dateFormat = "M月d日 HH:mm"
-                return "上次備份 \(f.string(from: date))"
-            case .working: return "備份中…"
-            case .failed(let why): return "失敗：\(why)"
+                return L("上次備份 %@", f.string(from: date))
+            case .working: return L("備份中…")
+            case .failed(let why): return L("失敗：%@", why)
             }
         }
     }
@@ -79,7 +79,7 @@ final class ICloudBackupService: ObservableObject {
     func refreshStatus(enabled: Bool) {
         guard enabled else { status = .disabled; return }
         if backupDirectory == nil {
-            status = .unavailable("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
+            status = .unavailable(L("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器"))
         } else {
             status = .idle(lastBackup ?? newestBackupDate())
         }
@@ -96,7 +96,7 @@ final class ICloudBackupService: ObservableObject {
     /// Writes one encrypted snapshot. Cheap enough to call on every change; throttled internally.
     func backup(tokens: [TokenItem], force: Bool = false) {
         guard let dir = backupDirectory else {
-            status = .unavailable("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器")
+            status = .unavailable(L("已啟用，但目前無法備份：請在系統設定登入 iCloud，並確認此版本已開通 iCloud 容器"))
             return
         }
         if !force, let lastWrite, Date().timeIntervalSince(lastWrite) < minimumInterval { return }
@@ -244,7 +244,7 @@ final class ICloudBackupService: ObservableObject {
 
         var errorDescription: String? {
             switch self {
-            case .encryptionFailed: return "備份加密失敗"
+            case .encryptionFailed: return L("備份加密失敗")
             case .keychain(let status):
                 return "鑰匙圈寫入失敗（\(status)）"
             }

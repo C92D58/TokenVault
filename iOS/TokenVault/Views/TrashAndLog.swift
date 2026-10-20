@@ -148,11 +148,11 @@ struct SecurityLogView: View {
                     .fill(tint(for: entry.action).opacity(0.12)))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(entry.action.rawValue)  \(entry.tokenName)")
+                Text("\(L(entry.action.rawValue))  \(entry.tokenName)")
                     .font(Theme.callout)
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
-                Text(entry.provider)
+                Text(L(entry.provider))
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textTertiary)
             }

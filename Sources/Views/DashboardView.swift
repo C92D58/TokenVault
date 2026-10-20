@@ -82,7 +82,7 @@ struct DashboardBar: View {
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     } else {
-                        Text(title)
+                        Text(L(title))
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
@@ -141,15 +141,17 @@ struct DashboardBar: View {
     }
 
     private func relativeTime(_ date: Date) -> String {
-        let diff = Int(Date().timeIntervalSince(date))
-        switch diff {
-        case ..<60: return "剛剛"
-        case ..<3600: return "\(diff / 60) 分鐘前"
-        case ..<86400: return "\(diff / 3600) 小時前"
-        case ..<604800: return "\(diff / 86400) 天前"
-        default: return date.formatted(date: .abbreviated, time: .omitted)
+        guard Date().timeIntervalSince(date) < 604800 else {
+            return date.formatted(date: .abbreviated, time: .omitted)
         }
+        return Self.relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        return f
+    }()
 
 }
 

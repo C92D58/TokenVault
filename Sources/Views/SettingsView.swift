@@ -33,7 +33,7 @@ struct SettingsView: View {
                 Section {
                     Picker("外觀", selection: $settings.appearanceMode) {
                         ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.displayName).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -243,7 +243,7 @@ struct SettingsView: View {
                                 .foregroundColor(entry.action == .copied ? .blue : .secondary)
                                 .frame(width: 20)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("\(entry.action.rawValue)「\(entry.tokenName)」").font(.system(size: 12))
+                                Text("\(L(entry.action.rawValue)) · \(entry.tokenName) · \(L(entry.provider))").font(.system(size: 12))
                                 Text("\(entry.provider) · \(entry.relativeTime)")
                                     .font(.system(size: 10)).foregroundColor(.secondary)
                             }

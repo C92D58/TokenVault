@@ -4,6 +4,8 @@ enum AppearanceMode: String, CaseIterable {
     case system = "跟隨系統"
     case dark = "深色"
     case light = "淺色"
+
+    var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
 }
 
 final class SettingsService: ObservableObject {

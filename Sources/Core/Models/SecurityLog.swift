@@ -18,6 +18,9 @@ struct SecurityLogEntry: Identifiable, Codable, Equatable {
     }
 
     enum Action: String, Codable, CaseIterable {
+        /// Localized verb; `rawValue` is the persisted value.
+        var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
+
         case copied = "複製"
         case viewed = "檢視"
         case exported = "匯出"
@@ -48,14 +51,18 @@ struct SecurityLogEntry: Identifiable, Codable, Equatable {
     }
 
     var relativeTime: String {
-        let diff = Int(Date().timeIntervalSince(timestamp))
-        switch diff {
-        case ..<60: return "剛剛"
-        case ..<3600: return "\(diff / 60) 分鐘前"
-        case ..<86400: return "\(diff / 3600) 小時前"
-        default: return timestamp.formatted(date: .abbreviated, time: .shortened)
+        guard Date().timeIntervalSince(timestamp) < 86400 else {
+            return timestamp.formatted(date: .abbreviated, time: .shortened)
         }
+        // Locale-aware: "6 hours ago" in English, "6 小時前" in Chinese, no hand-written cases.
+        return Self.relativeFormatter.localizedString(for: timestamp, relativeTo: Date())
     }
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        return f
+    }()
 }
 
 // MARK: - Security Log Store

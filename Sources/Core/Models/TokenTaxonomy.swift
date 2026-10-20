@@ -39,6 +39,9 @@ enum TokenCategory: String, Codable, CaseIterable {
         }
     }
 
+    /// Localized label. `rawValue` is both the lookup key and the persisted value, so the
+    /// Chinese source string doubles as the key for `Localizable.strings`.
+    var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
     var icon: String {
         switch self {
         case .ai: return "brain.head.profile"
@@ -85,6 +88,9 @@ enum TokenKind: String, Codable, CaseIterable {
     case wireguard = "WireGuard 設定"
     case other = "其他"
 
+    /// Localized label. `rawValue` is both the lookup key and the persisted value, so the
+    /// Chinese source string doubles as the key for `Localizable.strings`.
+    var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
     var icon: String {
         switch self {
         case .apiKey: return "key.horizontal.fill"
@@ -128,7 +134,8 @@ enum TokenProvider: String, Codable, CaseIterable {
     case custom = "自訂"
 
     /// 顯示名稱。
-    var label: String { rawValue }
+    var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
+    var label: String { displayName }
 
     var icon: String {
         switch self {

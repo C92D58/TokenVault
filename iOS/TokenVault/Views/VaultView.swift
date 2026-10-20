@@ -60,7 +60,7 @@ struct VaultView: View {
                     .accessibilityIdentifier("vault.title")
 
                 HStack(spacing: 6) {
-                    Text("\(vault.activeTokens.count) 個密鑰")
+                    Text(L("%lld 個密鑰", vault.activeTokens.count))
                     if !vault.favorites.isEmpty {
                         Circle().fill(Theme.textTertiary).frame(width: 2.5, height: 2.5)
                         Text("\(vault.favorites.count) 收藏")
@@ -94,7 +94,7 @@ struct VaultView: View {
                               systemImage: "trash")
                     }
                     Divider()
-                    Text("\(vault.activeTokens.count) 個密鑰 · AES-256-GCM")
+                    Text(L("%lld 個密鑰 · AES-256-GCM", vault.activeTokens.count))
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 15, weight: .semibold))

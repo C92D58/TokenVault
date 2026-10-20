@@ -129,7 +129,7 @@ struct ToolsView: View {
             isOn.wrappedValue.toggle()
             generate()
         } label: {
-            Text(label)
+            Text(L(label))
                 .font(Theme.monoSmall)
                 .foregroundStyle(isOn.wrappedValue ? Color.white : Theme.textSecondary)
                 .padding(.horizontal, 10)
@@ -335,7 +335,7 @@ struct ToolsView: View {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.accent)
-            Text(title)
+            Text(L(title))
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
             Spacer()

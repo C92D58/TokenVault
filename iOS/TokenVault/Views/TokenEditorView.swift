@@ -326,7 +326,7 @@ private struct EditorTextField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
+            Text(L(label))
                 .font(Theme.caption)
                 .foregroundStyle(Theme.textTertiary)
             TextField(placeholder, text: $text)
@@ -360,7 +360,7 @@ private struct MenuRow<Content: View>: View {
                     .frame(width: 24, height: 24)
                     .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(tint.opacity(0.12)))
-                Text(title)
+                Text(L(title))
                     .font(Theme.callout)
                     .foregroundStyle(Theme.textSecondary)
                 Spacer()

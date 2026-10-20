@@ -38,6 +38,12 @@ if [ -f "$RES/PrivacyInfo.xcprivacy" ]; then
   cp "$RES/PrivacyInfo.xcprivacy" "$BUNDLE/Contents/Resources/PrivacyInfo.xcprivacy"
 fi
 
+# Localizations (en + zh-Hant). Same files the iOS target compiles from Sources/Core/Resources.
+for lproj in Sources/Core/Resources/*.lproj; do
+  [ -d "$lproj" ] || continue
+  cp -R "$lproj" "$BUNDLE/Contents/Resources/"
+done
+
 # Embed provisioning profile if exists
 if [ -f "$RES/embedded.provisionprofile" ]; then
   cp "$RES/embedded.provisionprofile" "$BUNDLE/Contents/embedded.provisionprofile"

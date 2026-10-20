@@ -66,7 +66,7 @@ struct Pill: View {
     var filled = true
 
     var body: some View {
-        Text(text)
+        Text(L(text))
             .font(.system(size: 10.5, weight: .semibold))
             .tracking(0.3)
             .foregroundStyle(filled ? tint : Theme.textSecondary)
@@ -157,7 +157,7 @@ struct SlidingSegmented: View {
                     Haptics.select()
                     withAnimation(Theme.Motion.snap) { selection = index }
                 } label: {
-                    Text(title)
+                    Text(L(title))
                         .font(.system(size: 13, weight: selection == index ? .semibold : .medium))
                         .foregroundStyle(selection == index ? Theme.textPrimary : Theme.textSecondary)
                         .frame(maxWidth: .infinity)
@@ -189,7 +189,7 @@ struct SlidingSegmented: View {
 
 struct SearchField: View {
     @Binding var text: String
-    var placeholder: String = "搜尋名稱、服務商、標籤…"
+    var placeholder: String = L("搜尋名稱、服務商、標籤…")
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -247,7 +247,7 @@ struct FilterChip: View {
                 if let symbol {
                     Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
                 }
-                Text(title).font(.system(size: 12.5, weight: isOn ? .semibold : .medium))
+                Text(L(title)).font(.system(size: 12.5, weight: isOn ? .semibold : .medium))
             }
             .foregroundStyle(isOn ? Color.white : Theme.textSecondary)
             .padding(.horizontal, 12)
@@ -273,7 +273,7 @@ struct SectionLabel: View {
     init(_ text: String) { self.text = text }
 
     var body: some View {
-        Text(text.uppercased())
+        Text(L(text).uppercased())
             .font(.system(size: 10.5, weight: .bold))
             .tracking(0.9)
             .foregroundStyle(Theme.textTertiary)
@@ -290,7 +290,7 @@ struct MetaRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(label)
+            Text(L(label))
                 .font(Theme.callout)
                 .foregroundStyle(Theme.textTertiary)
             Spacer(minLength: Theme.Space.m)
@@ -321,11 +321,11 @@ struct SettingsRow<Trailing: View>: View {
                     .fill(tint.opacity(0.12)))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(L(title))
                     .font(Theme.body)
                     .foregroundStyle(Theme.textPrimary)
                 if let detail {
-                    Text(detail).font(Theme.caption).foregroundStyle(Theme.textTertiary)
+                    Text(L(detail)).font(Theme.caption).foregroundStyle(Theme.textTertiary)
                 }
             }
             Spacer(minLength: Theme.Space.s)
@@ -347,7 +347,7 @@ struct EmptyState: View {
                 .font(.system(size: 30, weight: .light))
                 .foregroundStyle(Theme.accent)
                 .padding(.bottom, 2)
-            Text(title)
+            Text(L(title))
                 .font(Theme.heading)
                 .foregroundStyle(Theme.textPrimary)
             Text(message)
@@ -388,7 +388,7 @@ struct PrimaryButton: View {
         } label: {
             HStack(spacing: 7) {
                 if let symbol { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)) }
-                Text(title).font(.system(size: 14, weight: .semibold))
+                Text(L(title)).font(.system(size: 14, weight: .semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -412,7 +412,7 @@ struct SecondaryButton: View {
         } label: {
             HStack(spacing: 7) {
                 if let symbol { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)) }
-                Text(title).font(.system(size: 14, weight: .semibold))
+                Text(L(title)).font(.system(size: 14, weight: .semibold))
             }
             .foregroundStyle(destructive ? Theme.danger : Theme.textPrimary)
             .frame(maxWidth: .infinity)

@@ -87,7 +87,7 @@ struct SpotlightSearch: View {
                                     }
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(token.name).font(.system(size: 13, weight: .medium))
-                                        Text("\(token.provider.rawValue) · \(token.environment.rawValue)")
+                                        Text("\(token.provider.displayName) · \(token.environment.displayName)")
                                             .font(.system(size: 10)).foregroundColor(.secondary)
                                     }
                                     Spacer()
@@ -154,7 +154,7 @@ struct SpotlightSearch: View {
     }
 
     private func filterChip(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(.system(size: 10, design: .monospaced))
             .foregroundColor(.secondary.opacity(0.5))
             .padding(.horizontal, 6).padding(.vertical, 2)
@@ -164,7 +164,7 @@ struct SpotlightSearch: View {
     private func quickAction(_ icon: String, _ label: String, _ shortcut: String = "") -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon).font(.system(size: 13)).foregroundColor(.secondary).frame(width: 20)
-            Text(label).font(.system(size: 12))
+            Text(L(label)).font(.system(size: 12))
             Spacer()
             if !shortcut.isEmpty {
                 Text(shortcut).font(.system(size: 10, design: .monospaced)).foregroundColor(.secondary.opacity(0.4))

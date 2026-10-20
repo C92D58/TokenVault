@@ -2,7 +2,13 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject private var app: AppState
-    @State private var tab = 0
+    /// `-uiStartSettings` / `-uiStartTab N` open a specific tab on launch (used for screenshots).
+    @State private var tab: Int = {
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-uiStartSettings") { return 3 }
+        if let i = args.firstIndex(of: "-uiStartTab"), i + 1 < args.count, let n = Int(args[i + 1]) { return n }
+        return 0
+    }()
 
     var body: some View {
         TabView(selection: $tab) {

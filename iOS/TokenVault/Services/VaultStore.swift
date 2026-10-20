@@ -302,10 +302,10 @@ final class VaultStore: ObservableObject {
         var summary: String {
             if let failure { return failure }
             var parts: [String] = []
-            if added > 0 { parts.append("新增 \(added)") }
-            if updated > 0 { parts.append("更新 \(updated)") }
-            if skippedUnreadable > 0 { parts.append("略過 \(skippedUnreadable)（其他裝置加密）") }
-            return parts.isEmpty ? "沒有可匯入的項目" : "匯入完成：" + parts.joined(separator: " · ")
+            if added > 0 { parts.append(L("新增 %lld", added)) }
+            if updated > 0 { parts.append(L("更新 %lld", updated)) }
+            if skippedUnreadable > 0 { parts.append(L("略過 %lld（其他裝置加密）", skippedUnreadable)) }
+            return parts.isEmpty ? L("沒有可匯入的項目") : L("匯入完成：") + parts.joined(separator: " · ")
         }
     }
 
@@ -432,19 +432,19 @@ final class VaultStore: ObservableObject {
     func seedDemoIfEmpty() {
         guard tokens.isEmpty else { return }
 
-        let work = VaultGroup(name: "工作", icon: "briefcase.fill", sortOrder: 0)
-        let personal = VaultGroup(name: "個人", icon: "person.fill", sortOrder: 1)
+        let work = VaultGroup(name: L("工作"), icon: "briefcase.fill", sortOrder: 0)
+        let personal = VaultGroup(name: L("個人"), icon: "person.fill", sortOrder: 1)
         groups = [work, personal]
 
         let samples: [(String, String, TokenProvider, TokenCategory, TokenKind, TokenEnvironment, String, [String], UUID?)] = [
-            ("OpenAI 專案金鑰", "sk-proj-8fJ2kLmQ7vRtY3nPqXwZaB4cDeGhI1jK", .openai, .ai, .apiKey, .production, "計費帳號 · 團隊共用", ["llm", "prod"], work.id),
-            ("GitHub 個人存取權杖", "ghp_9dK2mPq7RtY4nXwZbA1cEfGhIjKlMnOpQrSt", .github, .other, .oauth, .development, "repo + workflow scope", ["ci"], work.id),
+            (L("OpenAI 專案金鑰"), "sk-proj-8fJ2kLmQ7vRtY3nPqXwZaB4cDeGhI1jK", .openai, .ai, .apiKey, .production, "計費帳號 · 團隊共用", ["llm", "prod"], work.id),
+            (L("GitHub 個人存取權杖"), "ghp_9dK2mPq7RtY4nXwZbA1cEfGhIjKlMnOpQrSt", .github, .other, .oauth, .development, "repo + workflow scope", ["ci"], work.id),
             ("Cloudflare API Token", "cf_3xY7bN2mLpQ9vRtK4wZaB6cDeH1jF8gI5kSn", .cloudflare, .cloud, .apiKey, .production, "Zone.DNS 編輯權限", ["dns"], work.id),
-            ("Stripe 測試密鑰", "sk_test_51QmZkLpQ7vRtY3nPqXwZaB4cDeGhI1jK", .stripe, .payment, .apiKey, .staging, "訂閱流程測試", ["pay"], personal.id),
+            (L("Stripe 測試密鑰"), "sk_test_51QmZkLpQ7vRtY3nPqXwZaB4cDeGhI1jK", .stripe, .payment, .apiKey, .staging, "訂閱流程測試", ["pay"], personal.id),
             ("Claude API", "sk-ant-api03-Kq7RtY3nPqXwZaB4cDeGhI1jKlMnOpQrStUvWx", .claude, .ai, .apiKey, .production, "長文本摘要服務", ["llm"], personal.id),
-            ("伺服器 SSH 私鑰", "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA\n-----END OPENSSH PRIVATE KEY-----", .custom, .ssh, .sshKey, .production, "srv.wahsun.org · port 28898", ["infra"], personal.id),
-            ("Tailscale 驗證金鑰", "tskey-auth-kQ7RtY3nPqXwZaB4cDeGhI1jK", .tailscale, .server, .apiKey, .development, "可重複使用 · 90 天", ["vpn"], work.id),
-            ("JWT 範例（除錯用）", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWhzdW4iLCJyb2xlIjoiZGV2IiwiaWF0IjoxNzYwMDAwMDAwLCJleHAiOjE3OTAwMDAwMDB9.c2lnbmF0dXJlLXBsYWNlaG9sZGVy", .custom, .jwt, .jwt, .development, "可在工具頁解碼", ["debug"], nil)
+            (L("伺服器 SSH 私鑰"), "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA\n-----END OPENSSH PRIVATE KEY-----", .custom, .ssh, .sshKey, .production, "srv.wahsun.org · port 28898", ["infra"], personal.id),
+            (L("Tailscale 驗證金鑰"), "tskey-auth-kQ7RtY3nPqXwZaB4cDeGhI1jK", .tailscale, .server, .apiKey, .development, "可重複使用 · 90 天", ["vpn"], work.id),
+            (L("JWT 範例（除錯用）"), "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWhzdW4iLCJyb2xlIjoiZGV2IiwiaWF0IjoxNzYwMDAwMDAwLCJleHAiOjE3OTAwMDAwMDB9.c2lnbmF0dXJlLXBsYWNlaG9sZGVy", .custom, .jwt, .jwt, .development, "可在工具頁解碼", ["debug"], nil)
         ]
 
         for sample in samples {

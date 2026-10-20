@@ -93,7 +93,7 @@ struct SettingsView: View {
             SectionLabel("安全")
 
             SettingsRow(symbol: app.auth.symbol, title: "生物辨識解鎖",
-                        detail: app.auth.isAvailable ? "使用 \(app.auth.label) 或裝置密碼" : "尚未設定裝置密碼") {
+                        detail: app.auth.isAvailable ? L("使用 %@ 或裝置密碼", app.auth.label) : L("尚未設定裝置密碼")) {
                 Toggle("", isOn: $settings.biometricLock)
                     .labelsHidden()
                     .tint(Theme.accent)
@@ -179,7 +179,7 @@ struct SettingsView: View {
                 }
             } label: {
                 SettingsRow(symbol: "square.and.arrow.up", title: "匯出",
-                            detail: vault.activeTokens.isEmpty ? "尚無密鑰" : "\(vault.activeTokens.count) 個密鑰") {
+                            detail: vault.activeTokens.isEmpty ? L("尚無密鑰") : L("%lld 個密鑰", vault.activeTokens.count)) {
                     MenuValue(text: "選擇格式")
                 }
             }
@@ -293,7 +293,7 @@ private struct MenuValue: View {
     let text: String
     var body: some View {
         HStack(spacing: 3) {
-            Text(text)
+            Text(L(text))
                 .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(Theme.textSecondary)
             Image(systemName: "chevron.right")

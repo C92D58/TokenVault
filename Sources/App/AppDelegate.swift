@@ -124,31 +124,31 @@ extension AppDelegate: NSApplicationDelegate {
     private func buildMenu() {
         let main = NSMenu()
         let app = NSMenu()
-        app.addItem(NSMenuItem(title: "關於 TokenVault", action: #selector(showAbout), keyEquivalent: ""))
+        app.addItem(NSMenuItem(title: L("關於 TokenVault"), action: #selector(showAbout), keyEquivalent: ""))
         app.addItem(.separator())
-        app.addItem(NSMenuItem(title: "設定...", action: #selector(showSettings), keyEquivalent: ","))
+        app.addItem(NSMenuItem(title: L("設定..."), action: #selector(showSettings), keyEquivalent: ","))
         app.addItem(.separator())
-        app.addItem(NSMenuItem(title: "鎖定", action: #selector(lockApp), keyEquivalent: "l"))
+        app.addItem(NSMenuItem(title: L("鎖定"), action: #selector(lockApp), keyEquivalent: "l"))
         app.addItem(.separator())
-        app.addItem(NSMenuItem(title: "隱藏", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
-        app.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        app.addItem(NSMenuItem(title: L("隱藏"), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h"))
+        app.addItem(NSMenuItem(title: L("退出"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         main.addItem({ let i = NSMenuItem(); i.submenu = app; return i }())
 
         let file = NSMenu(title: "檔案")
-        file.addItem(NSMenuItem(title: "新增 Token", action: #selector(newToken), keyEquivalent: "n"))
-        file.addItem(NSMenuItem(title: "新增分組", action: #selector(newGroup), keyEquivalent: "N"))
+        file.addItem(NSMenuItem(title: L("新增 Token"), action: #selector(newToken), keyEquivalent: "n"))
+        file.addItem(NSMenuItem(title: L("新增分組"), action: #selector(newGroup), keyEquivalent: "N"))
         file.addItem(.separator())
-        file.addItem(NSMenuItem(title: "匯入...", action: #selector(showImport), keyEquivalent: "i"))
-        file.addItem(NSMenuItem(title: "匯出備份...", action: #selector(exportBackup), keyEquivalent: "e"))
+        file.addItem(NSMenuItem(title: L("匯入..."), action: #selector(showImport), keyEquivalent: "i"))
+        file.addItem(NSMenuItem(title: L("匯出備份..."), action: #selector(exportBackup), keyEquivalent: "e"))
         main.addItem({ let i = NSMenuItem(); i.submenu = file; return i }())
 
         let edit = NSMenu(title: "編輯")
-        edit.addItem(NSMenuItem(title: "還原", action: #selector(undoAction), keyEquivalent: "z"))
-        edit.addItem(NSMenuItem(title: "重做", action: #selector(redoAction), keyEquivalent: "Z"))
+        edit.addItem(NSMenuItem(title: L("還原"), action: #selector(undoAction), keyEquivalent: "z"))
+        edit.addItem(NSMenuItem(title: L("重做"), action: #selector(redoAction), keyEquivalent: "Z"))
         main.addItem({ let i = NSMenuItem(); i.submenu = edit; return i }())
 
         let help = NSMenu(title: "輔助說明")
-        help.addItem(NSMenuItem(title: "TokenVault 說明", action: #selector(showHelp), keyEquivalent: "?"))
+        help.addItem(NSMenuItem(title: L("TokenVault 說明"), action: #selector(showHelp), keyEquivalent: "?"))
         main.addItem({ let i = NSMenuItem(); i.submenu = help; return i }())
         NSApplication.shared.mainMenu = main
     }
@@ -164,11 +164,11 @@ extension AppDelegate: NSApplicationDelegate {
             btn.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "顯示主視窗", action: #selector(showMainContent), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "鎖定", action: #selector(lockApp), keyEquivalent: "l"))
-        menu.addItem(NSMenuItem(title: "設定...", action: #selector(showSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem(title: L("顯示主視窗"), action: #selector(showMainContent), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: L("鎖定"), action: #selector(lockApp), keyEquivalent: "l"))
+        menu.addItem(NSMenuItem(title: L("設定..."), action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: L("退出"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
 
         popover = NSPopover()
@@ -234,7 +234,7 @@ extension AppDelegate: NSApplicationDelegate {
         if settingsWindow == nil {
             settingsWindow = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
             settingsWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
-            applyGlassStyle(settingsWindow, title: "設定",
+            applyGlassStyle(settingsWindow, title: L("設定"),
                             size: NSSize(width: 480, height: 520),
                             minSize: NSSize(width: 440, height: 440))
             settingsWindow?.setFrameAutosaveName("TokenVaultSettings")
@@ -246,7 +246,7 @@ extension AppDelegate: NSApplicationDelegate {
         if helpWindow == nil {
             helpWindow = NSWindow(contentViewController: NSHostingController(rootView: HelpView()))
             helpWindow?.styleMask = [.titled, .closable, .fullSizeContentView]
-            applyGlassStyle(helpWindow, title: "TokenVault 說明",
+            applyGlassStyle(helpWindow, title: L("TokenVault 說明"),
                             size: NSSize(width: 520, height: 500),
                             minSize: NSSize(width: 480, height: 420))
             helpWindow?.setFrameAutosaveName("TokenVaultHelp")
@@ -259,7 +259,7 @@ extension AppDelegate: NSApplicationDelegate {
             let win = NSWindow(contentViewController: NSHostingController(rootView: AboutView()))
             win.styleMask = [.titled, .closable, .fullSizeContentView]
             aboutWindow = win
-            applyGlassStyle(aboutWindow, title: "關於 TokenVault",
+            applyGlassStyle(aboutWindow, title: L("關於 TokenVault"),
                             size: NSSize(width: 420, height: 476))
             aboutWindow?.setFrameAutosaveName("TokenVaultAbout")
         }
@@ -411,21 +411,21 @@ extension AppDelegate {
             store.addToken(t, to: group)
         }
 
-        add("OpenAI 生產密鑰", "sk-proj-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7", .production, groups.first,
+        add(L("OpenAI 生產密鑰"), "sk-proj-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7", .production, groups.first,
             tags: ["chat", "ai"], note: "GPT-4o 與圖像生成共用", fav: true, copies: 42)
-        add("GitHub Actions Token", "ghp_9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT4u", .production, groups.first,
+        add(L("GitHub Actions Token"), "ghp_9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT4u", .production, groups.first,
             tags: ["ci"], note: "release workflow 專用，90 天輪換", fav: true, copies: 17)
-        add("Stripe 測試密鑰", "sk_test_51Nc8ZkL2mQ9rT4vW7xY1bN3cD6eF8gH2jK5", .staging, groups.first,
+        add(L("Stripe 測試密鑰"), "sk_test_51Nc8ZkL2mQ9rT4vW7xY1bN3cD6eF8gH2jK5", .staging, groups.first,
             tags: ["payment"], note: "只在 staging 使用", copies: 9)
-        add("Anthropic Claude", "sk-ant-api03-Q7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK2v", .production, nil,
+        add(L("Anthropic Claude"), "sk-ant-api03-Q7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK2v", .production, nil,
             tags: ["ai"], copies: 23)
-        add("Cloudflare API Token", "cf-9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT3b", .production, groups.last,
+        add(L("Cloudflare API Token"), "cf-9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT3b", .production, groups.last,
             tags: ["dns", "cdn"], note: "wrangler deploy 使用", copies: 31)
-        add("AWS 部署角色", "AKIA3XQ7RT2VW9XY4BN1", .production, groups.last,
+        add(L("AWS 部署角色"), "AKIA3XQ7RT2VW9XY4BN1", .production, groups.last,
             tags: ["iam"], note: "ci-deploy role，只允許 ECR push")
-        add("Vercel 預覽部署", "vercel_tok_4vW9xY2bN6cD1eF8gH3jL7sP0mK5rT", .development, groups.last,
+        add(L("Vercel 預覽部署"), "vercel_tok_4vW9xY2bN6cD1eF8gH3jL7sP0mK5rT", .development, groups.last,
             tags: ["preview"], copies: 6)
-        add("Supabase Service Role", "sbp_7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK9x", .development, nil,
+        add(L("Supabase Service Role"), "sbp_7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK9x", .development, nil,
             tags: ["db"], note: "只給後台服務使用")
 
         store.save()
@@ -443,36 +443,34 @@ extension AppDelegate {
         mainWindow?.setContentSize(NSSize(width: 1180, height: 780))
         mainWindow?.center()
 
-        func shot(_ name: String) {
-            write(window: NSApp.keyWindow ?? mainWindow, to: dir.appendingPathComponent(name))
+        func shot(_ name: String, _ window: NSWindow?) {
+            write(window: window, to: dir.appendingPathComponent(name))
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-            shot("01-main.png")
+            shot("01-main.png", self.mainWindow)
 
-            // Add-token sheet: the real editing surface, and the only secondary window whose
-            // chrome does not depend on a SwiftUI TabView.
+            // Add-token sheet: capture the sheet itself, then close it deterministically.
             NotificationCenter.default.post(name: .showAddToken, object: nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                shot("02-editor.png")
-                if let sheet = NSApp.keyWindow, let parent = sheet.sheetParent {
-                    parent.endSheet(sheet)
+                shot("02-editor.png", self.mainWindow?.attachedSheet)
+                if let sheet = self.mainWindow?.attachedSheet {
+                    self.mainWindow?.endSheet(sheet)
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                     self.showLockScreen()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                        self.write(window: self.lockWindow,
-                                   to: dir.appendingPathComponent("03-lock.png"))
+                        shot("03-lock.png", self.lockWindow)
                         self.lockWindow?.orderOut(nil)
                         self.auth.isLocked = false
                         self.showAbout()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                            NSApp.keyWindow?.makeFirstResponder(nil)
-                            shot("04-about.png")
+                            self.aboutWindow?.makeFirstResponder(nil)
+                            shot("04-about.png", self.aboutWindow)
                             self.showSettings()
                             NotificationCenter.default.post(name: .showSettingsSyncTab, object: nil)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-                                shot("05-settings.png")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                                shot("05-settings.png", self.settingsWindow)
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.terminate(nil) }
                             }
                         }

@@ -84,7 +84,7 @@ struct ImportWizard: View {
                     Text("\(index + 1)").font(.system(size: 11)).foregroundColor(.secondary.opacity(0.4))
                 }
             }
-            Text(label).font(.system(size: 11, weight: step >= index ? .medium : .regular))
+            Text(L(label)).font(.system(size: 11, weight: step >= index ? .medium : .regular))
                 .foregroundColor(step >= index ? .primary : .secondary.opacity(0.4))
         }
     }
@@ -240,7 +240,7 @@ struct ImportWizard: View {
     }
 
     private func envPill(_ env: TokenEnvironment) -> some View {
-        Text(env.rawValue).font(Font.system(size: 10, weight: .bold))
+        Text(env.displayName).font(Font.system(size: 10, weight: .bold))
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(Capsule().fill(env.brandColor.opacity(0.18)))
             .foregroundColor(env.brandColor)

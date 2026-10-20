@@ -4,6 +4,8 @@ import AppKit
 // MARK: - Main View (NavigationSplitView)
 
 enum TokenSortOrder: String, CaseIterable {
+    var displayName: String { String(localized: String.LocalizationValue(rawValue)) }
+
     case recent = "最近新增"
     case mostUsed = "最常用"
     case lastUsed = "最近使用"
@@ -301,7 +303,7 @@ struct MainView: View {
                         sortOrder = order
                     } label: {
                         HStack {
-                            Text(order.rawValue)
+                            Text(order.displayName)
                             if sortOrder == order { Image(systemName: "checkmark") }
                         }
                     }
@@ -309,7 +311,7 @@ struct MainView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.arrow.down").font(.system(size: 11))
-                    Text(sortOrder.rawValue).font(.system(size: 11))
+                    Text(sortOrder.displayName).font(.system(size: 11))
                 }
                 .foregroundColor(.secondary)
             }
@@ -586,7 +588,7 @@ private struct SidebarItem: View {
                     .font(.system(size: 11))
                     .frame(width: 18)
                     .foregroundColor(isSelected ? DS.Color.accent : .secondary)
-                Text(label)
+                Text(L(label))
                     .font(.system(size: 12))
                     .lineLimit(1)
                     .foregroundColor(isSelected ? .primary : .secondary)
@@ -616,7 +618,7 @@ private struct SidebarSection: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text)
+        Text(L(text))
             .font(.system(size: 11, weight: .semibold))
             .foregroundColor(.secondary)
             .padding(.horizontal, 14).padding(.top, 10).padding(.bottom, 2)
@@ -640,7 +642,7 @@ private struct FilterChip: View {
         Button(action: onRemove) {
             HStack(spacing: 4) {
                 Image(systemName: icon).font(.system(size: 10))
-                Text(label).font(.system(size: 10, weight: .medium))
+                Text(L(label)).font(.system(size: 10, weight: .medium))
                 Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
             }
             .padding(.horizontal, 8).padding(.vertical, 4)
@@ -660,7 +662,7 @@ private struct EnvFilterPill: View {
 
     var body: some View {
         Button(action: action) {
-            Text(env.rawValue)
+            Text(env.displayName)
                 .font(.system(size: 10, weight: .medium))
                 .padding(.horizontal, 8).padding(.vertical, 3)
         }
@@ -749,7 +751,7 @@ struct TokenCard: View {
                             .font(.system(size: 10)).foregroundColor(.orange)
                     }
                     if !token.isDeleted {
-                        Text(token.environment.rawValue)
+                        Text(token.environment.displayName)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(token.environment.brandColor)
                             .padding(.horizontal, 5).padding(.vertical, 1)

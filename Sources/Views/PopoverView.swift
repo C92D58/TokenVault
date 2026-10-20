@@ -151,7 +151,7 @@ struct PopoverView: View {
                         .tracking(-0.2).lineLimit(1)
                     Text(token.category.emoji).font(.system(size: 9))
                 }
-                Text("\(token.provider.rawValue) · \(token.environment.rawValue)")
+                Text("\(token.provider.displayName) · \(token.environment.displayName)")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary).lineLimit(1)
             }

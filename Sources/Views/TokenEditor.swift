@@ -49,7 +49,7 @@ struct TokenEditor: View {
                         fieldLabel("環境", icon: "square.3.layers.3d")
                         Picker("", selection: $environment) {
                             ForEach(TokenEnvironment.allCases, id: \.self) { env in
-                                Text(env.rawValue).tag(env)
+                                Text(env.displayName).tag(env)
                             }
                         }
                         .pickerStyle(.menu).labelsHidden()
@@ -73,7 +73,7 @@ struct TokenEditor: View {
                         fieldLabel("憑證類型", icon: "key.horizontal")
                         Picker("", selection: $kind) {
                             ForEach(TokenKind.allCases, id: \.self) { k in
-                                Text(k.rawValue).tag(k)
+                                Text(k.displayName).tag(k)
                             }
                         }
                         .pickerStyle(.menu).labelsHidden()
@@ -169,7 +169,7 @@ struct TokenEditor: View {
     // MARK: - Helpers
 
     private func fieldLabel(_ text: String, icon: String) -> some View {
-        Label(text, systemImage: icon)
+        Label(L(text), systemImage: icon)
             .font(.system(size: 11, weight: .semibold))
             .foregroundColor(.secondary)
     }

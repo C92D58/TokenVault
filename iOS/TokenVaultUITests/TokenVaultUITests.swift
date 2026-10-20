@@ -10,7 +10,10 @@ final class TokenVaultUITests: XCTestCase {
 
     private func launchApp(seed: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
-        var args = ["-uiTestReset", "-uiTestUnlocked"]
+        // Pin the UI language: the suite queries Chinese labels, so it must not depend on how the
+        // simulator or the host Mac is configured. English is covered by the shared strings file.
+        var args = ["-uiTestReset", "-uiTestUnlocked",
+                    "-AppleLanguages", "(zh-Hant)", "-AppleLocale", "zh_Hant_TW"]
         if seed { args.append("-uiTestSeed") }
         app.launchArguments = args
         app.launch()
