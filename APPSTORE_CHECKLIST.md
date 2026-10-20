@@ -41,20 +41,35 @@ ls TokenVault.app/PrivacyInfo.xcprivacy                 # 必須存在
 
 ## 三、上架前還要做的
 
-### 0. 開通 iCloud 容器（新功能「iCloud 自動備份」必要）
+### 0. iCloud 容器（已完成 ✅）
 
-兩端的 entitlements 都已寫入：
+已用 Xcode 自動簽名建立，不需要你進後台點：
+
+| 項目 | 值 |
+|---|---|
+| 容器 | `iCloud.dev.wahsun.tokenvault`（Production + Development 兩種環境） |
+| App ID | `dev.wahsun.tokenvault`（`MAA6W8AG5P`），iCloud / CloudDocuments 已開啟 |
+| Provisioning profile | `iOS Team Provisioning Profile: dev.wahsun.tokenvault`，含 `icloud-container-identifiers`、`ubiquity-container-identifiers`、`ubiquity-kvstore-identifier = MAA6W8AG5P.*` |
+| 觸發方式 | `xcodebuild -allowProvisioningUpdates DEVELOPMENT_TEAM=MAA6W8AG5P` |
+
+驗證指令（任何人可重跑，看 profile 裡是否真的有容器）：
+
+```bash
+xcodebuild -project iOS/TokenVault.xcodeproj -scheme TokenVault \
+  -destination 'generic/platform=iOS' -derivedDataPath /tmp/tv-prov \
+  -allowProvisioningUpdates DEVELOPMENT_TEAM=MAA6W8AG5P build
+
+security cms -D -i "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/<uuid>.mobileprovision" \
+  | plutil -extract Entitlements json -o - - | grep -i icloud
+```
+
+兩端的 entitlements 都指向同一個容器：
 
 ```
 com.apple.developer.icloud-container-identifiers = iCloud.dev.wahsun.tokenvault
 com.apple.developer.icloud-services             = CloudDocuments
 com.apple.developer.ubiquity-kvstore-identifier = $(TeamIdentifierPrefix)$(CFBundleIdentifier)
 ```
-
-但容器本身必須在開發者後台存在：<https://developer.apple.com/account/resources/identifiers/list/cloudContainer>
-→ 新增 `iCloud.dev.wahsun.tokenvault` → 回到 App ID `dev.wahsun.tokenvault` 勾選 iCloud（CloudDocuments）→ 重新產生 provisioning profile。
-
-沒做這步的後果：App 不會崩，設定頁會顯示「iCloud 無法使用：…」並禁用還原按鈕。
 
 > 本機 `build.sh` 會自動剝掉 `com.apple.developer.*` 再 ad-hoc 簽名，因為 ad-hoc 簽章帶這些 entitlement 會被 AMFI 直接 `Killed: 9`。真正上架的簽名請用 `publish.sh` / Xcode Archive（保留完整 entitlements）。
 
