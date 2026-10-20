@@ -2,19 +2,27 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var settings = SettingsService.shared
+    @ObservedObject private var backupService = ICloudBackupService.shared
     @State private var showGHSetup = false
     @State private var ghToken = ""
     @State private var syncing = false
     @State private var syncMessage = ""
+    @State var showingRestore = false
+    @State private var selectedTab: SettingsTab = .general
+
+    private enum SettingsTab: Hashable { case general, sync, security, log }
 
     var body: some View {
-        TabView {
-            generalTab.tabItem { Label("一般", systemImage: "gearshape") }
-            syncTab.tabItem { Label("同步", systemImage: "arrow.triangle.capsulepath") }
-            securityTab.tabItem { Label("安全", systemImage: "lock.shield") }
-            logTab.tabItem { Label("記錄", systemImage: "list.bullet.rectangle") }
+        TabView(selection: $selectedTab) {
+            generalTab.tabItem { Label("一般", systemImage: "gearshape") }.tag(SettingsTab.general)
+            syncTab.tabItem { Label("同步", systemImage: "arrow.triangle.capsulepath") }.tag(SettingsTab.sync)
+            securityTab.tabItem { Label("安全", systemImage: "lock.shield") }.tag(SettingsTab.security)
+            logTab.tabItem { Label("記錄", systemImage: "list.bullet.rectangle") }.tag(SettingsTab.log)
         }
         .frame(minWidth: 500, minHeight: 500)
+        .onReceive(NotificationCenter.default.publisher(for: .showSettingsSyncTab)) { _ in
+            selectedTab = .sync
+        }
     }
 
     // MARK: - General
@@ -69,10 +77,44 @@ struct SettingsView: View {
         ScrollView {
             Form {
                 Section {
-                    Text("Vault 存在 App 的 Application Support 目錄，整份以 AES-256-GCM 加密。跨裝置請用「匯出加密備份」再匯入。")
+                    Text("Vault 存在 App 的 Application Support 目錄，整份以 AES-256-GCM 加密。跨裝置還原請用下方 iCloud 備份或「匯出加密備份」。")
                         .font(.system(size: 10)).foregroundColor(.secondary)
                 } header: {
                     Text("本機儲存").font(.system(size: 11, weight: .semibold))
+                }
+
+                Section {
+                    Toggle("iCloud 自動備份", isOn: $settings.iCloudBackupEnabled)
+                        .onChange(of: settings.iCloudBackupEnabled) { _, on in
+                            ICloudBackupService.shared.refreshStatus(enabled: on)
+                            if on, let store = liveStore {
+                                ICloudBackupService.shared.backup(tokens: store.allTokens, force: true)
+                            }
+                        }
+
+                    Text(backupService.status.summary)
+                        .font(.system(size: 10))
+                        .foregroundColor(backupFailed ? .red : .secondary)
+
+                    HStack(spacing: 8) {
+                        Button("立即備份") {
+                            guard let store = liveStore else { return }
+                            ICloudBackupService.shared.refreshStatus(enabled: true)
+                            ICloudBackupService.shared.backup(tokens: store.allTokens, force: true)
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        .disabled(!settings.iCloudBackupEnabled)
+
+                        Button("從 iCloud 還原…") { showingRestore = true }
+                            .buttonStyle(.bordered).controlSize(.small)
+                            .disabled(!settings.iCloudBackupEnabled || !backupService.isAvailable)
+                    }
+                    .sheet(isPresented: $showingRestore) { restoreSheet }
+
+                    Text("加密後寫入 iCloud Drive/TokenVault/Backups，保留最近 7 份。金鑰存在 iCloud 鑰匙圈，換機登入同一 Apple ID 即可還原。")
+                        .font(.system(size: 10)).foregroundColor(.secondary)
+                } header: {
+                    Text("iCloud".uppercased()).font(.system(size: 11, weight: .semibold))
                 }
 
                 Section {
@@ -315,4 +357,76 @@ struct SettingsView: View {
             }
         }
     }
+}
+
+// MARK: - iCloud restore
+
+extension SettingsView {
+    var liveStore: DataStore? { (NSApp.delegate as? AppDelegate)?.store }
+
+    var backupFailed: Bool {
+        if case .failed = backupService.status { return true }
+        return false
+    }
+
+    var restoreSheet: some View {
+        let snapshots = backupService.snapshots()
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("從 iCloud 還原").font(.system(size: 15, weight: .bold))
+            Text("只會補上缺少的 Token，不會覆蓋現有資料。")
+                .font(.system(size: 11)).foregroundColor(.secondary)
+
+            if snapshots.isEmpty {
+                Text("沒有可用的備份")
+                    .font(.system(size: 12)).foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 90)
+            } else {
+                ScrollView {
+                    VStack(spacing: 6) {
+                        ForEach(snapshots, id: \.url) { snap in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(Self.snapshotFormatter.string(from: snap.createdAt))
+                                        .font(.system(size: 12, weight: .medium))
+                                    Text("\(snap.tokens.count) 個 Token")
+                                        .font(.system(size: 10)).foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Button("還原") { restore(from: snap) }
+                                    .buttonStyle(.borderedProminent).controlSize(.small)
+                            }
+                            .padding(8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)))
+                        }
+                    }
+                }
+                .frame(maxHeight: 260)
+            }
+
+            HStack {
+                Spacer()
+                Button("關閉") { showingRestore = false }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 430)
+    }
+
+    private func restore(from snapshot: ICloudBackupService.Snapshot) {
+        guard let store = liveStore else { return }
+        let existing = Set(store.allTokens.map(\.id))
+        for token in snapshot.tokens where !existing.contains(token.id) {
+            let group = store.groups.first { $0.id == token.groupID }
+            store.addToken(token, to: group)
+        }
+        store.save()
+        showingRestore = false
+    }
+
+    private static let snapshotFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy/M/d HH:mm"
+        return f
+    }()
 }

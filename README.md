@@ -61,8 +61,9 @@ TokenVault is **free and open-source software**, released under the [MIT License
 
 ### 🔄 Backup & transfer
 
-- **Local-first storage** — the vault lives inside the app's own Application Support directory,
-  encrypted; nothing is uploaded anywhere
+- **Automatic encrypted backup to iCloud** — snapshots land in
+  `iCloud Drive/TokenVault/Backups`, newest 7 kept; the key sits in your iCloud keychain so a
+  replacement device restores with nothing to retype
 - **Encrypted backups** — export an AES-256-GCM JSON backup, or `.env` / CSV for other tools
 - **Multi-format import** — `.env`, CSV, JSON backups, manual paste, drag & drop
 - **GitHub private-repo backup** (macOS) — encrypted backup to your own private repo (optional)

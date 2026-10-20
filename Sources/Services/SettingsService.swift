@@ -27,6 +27,9 @@ final class SettingsService: ObservableObject {
     @Published var githubRepo: String {
         didSet { UserDefaults.standard.set(githubRepo, forKey: "gh_repo") }
     }
+    @Published var iCloudBackupEnabled: Bool {
+        didSet { UserDefaults.standard.set(iCloudBackupEnabled, forKey: "icloud_backup") }
+    }
 
     init() {
         let d = UserDefaults.standard
@@ -36,6 +39,7 @@ final class SettingsService: ObservableObject {
         autoLockSeconds = d.object(forKey: "auto_lock_sec") as? Int ?? 60
         githubSyncEnabled = d.object(forKey: "gh_sync") as? Bool ?? false
         githubRepo = d.string(forKey: "gh_repo") ?? ""
+        iCloudBackupEnabled = d.object(forKey: "icloud_backup") as? Bool ?? true
     }
 
     /// Apply appearance to all windows.

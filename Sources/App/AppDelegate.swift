@@ -60,6 +60,8 @@ extension AppDelegate {
 
 extension Notification.Name {
     static let showAddToken = Notification.Name("showAddToken")
+    /// Opens Settings on the sync tab (iCloud backup lives there).
+    static let showSettingsSyncTab = Notification.Name("showSettingsSyncTab")
     static let showAddGroup = Notification.Name("showAddGroup")
     static let showImportWizard = Notification.Name("showImportWizard")
 }
@@ -74,11 +76,30 @@ extension AppDelegate: NSApplicationDelegate {
         setupMainWindow()
         setupGlobalHotkey()
         buildMenu()
-        showLockScreen()
 
-        // Notifications
-        NotificationService.requestPermission()
-        NotificationService.scheduleExpiryReminders(for: store.allTokens)
+        // Verification hook: exercise the backup path and exit before any window work.
+        if runBackupSelfTestIfRequested() { return }
+
+        if let dir = Self.storeShotDirectory {
+            // Store screenshot run: same windows, real pixels, no prompts, no lock screen.
+            settings.appearanceMode = .dark
+            settings.applyAppearance()
+            auth.isLocked = false
+            seedStoreShotData()
+            showMainContent()
+            captureStoreShots(into: dir)
+        } else {
+            showLockScreen()
+            // Notifications
+            NotificationService.requestPermission()
+            NotificationService.scheduleExpiryReminders(for: store.allTokens)
+
+            // iCloud backup: refresh the reported state, then snapshot whatever is already stored.
+            if settings.iCloudBackupEnabled {
+                ICloudBackupService.shared.refreshStatus(enabled: true)
+                ICloudBackupService.shared.backup(tokens: store.allTokens)
+            }
+        }
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(appDidResignActive),
@@ -91,6 +112,12 @@ extension AppDelegate: NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Last chance to capture edits made in the final seconds before quit.
+        guard settings.iCloudBackupEnabled else { return }
+        ICloudBackupService.shared.backup(tokens: store.allTokens, force: true)
+    }
 
     // ── Menu ──
 
@@ -351,6 +378,146 @@ extension AppDelegate: NSApplicationDelegate {
             }
             return noErr
         }, 1, &spec, nil, nil)
+    }
+}
+
+// MARK: - App Store screenshots (`--capture-shots <dir>`)
+
+extension AppDelegate {
+    /// Destination for store images, or nil on a normal launch. Everything below is dead code
+    /// unless the app is started by `scripts/make-macos-shots.sh`.
+    static var storeShotDirectory: URL? {
+        let args = CommandLine.arguments
+        guard let i = args.firstIndex(of: "--capture-shots"), i + 1 < args.count else { return nil }
+        return URL(fileURLWithPath: args[i + 1], isDirectory: true)
+    }
+
+    /// Demo vault so the windows have something to show. Writes only to whatever store directory
+    /// this process is pointed at (the shot script runs with a throwaway HOME).
+    func seedStoreShotData() {
+        guard store.allTokens.isEmpty else { return }
+
+        store.addGroup("客戶端 App")
+        store.addGroup("伺服器")
+        let groups = store.groups
+
+        func add(_ name: String, _ value: String, _ env: TokenEnvironment, _ group: TokenGroup?,
+                 tags: [String] = [], note: String = "", fav: Bool = false, copies: Int = 0) {
+            let t = TokenItem(name: name, plainValue: value, note: note, environment: env,
+                              tags: tags, groupID: group?.id)
+            t.isFavorite = fav
+            t.copyCount = copies
+            if copies > 0 { t.lastUsedAt = Date().addingTimeInterval(-Double(copies) * 3600) }
+            store.addToken(t, to: group)
+        }
+
+        add("OpenAI 生產密鑰", "sk-proj-A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7", .production, groups.first,
+            tags: ["chat", "ai"], note: "GPT-4o 與圖像生成共用", fav: true, copies: 42)
+        add("GitHub Actions Token", "ghp_9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT4u", .production, groups.first,
+            tags: ["ci"], note: "release workflow 專用，90 天輪換", fav: true, copies: 17)
+        add("Stripe 測試密鑰", "sk_test_51Nc8ZkL2mQ9rT4vW7xY1bN3cD6eF8gH2jK5", .staging, groups.first,
+            tags: ["payment"], note: "只在 staging 使用", copies: 9)
+        add("Anthropic Claude", "sk-ant-api03-Q7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK2v", .production, nil,
+            tags: ["ai"], copies: 23)
+        add("Cloudflare API Token", "cf-9xY2mK4pQ7rT1vW3nB6cD8eF0gH5jL2sT3b", .production, groups.last,
+            tags: ["dns", "cdn"], note: "wrangler deploy 使用", copies: 31)
+        add("AWS 部署角色", "AKIA3XQ7RT2VW9XY4BN1", .production, groups.last,
+            tags: ["iam"], note: "ci-deploy role，只允許 ECR push")
+        add("Vercel 預覽部署", "vercel_tok_4vW9xY2bN6cD1eF8gH3jL7sP0mK5rT", .development, groups.last,
+            tags: ["preview"], copies: 6)
+        add("Supabase Service Role", "sbp_7rT2vW9xY4bN1cD8eF5gH3jL6sP0mK9x", .development, nil,
+            tags: ["db"], note: "只給後台服務使用")
+
+        store.save()
+    }
+
+    func captureStoreShots(into requested: URL) {
+        // The build is sandboxed, so an arbitrary path like /tmp is not writable. Fall back to the
+        // container and print where the files actually went.
+        let dir = FileManager.default.isWritableFile(atPath: requested.path)
+            ? requested
+            : FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("store-shots", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        print("[shot] writing to \(dir.path)")
+        mainWindow?.setContentSize(NSSize(width: 1180, height: 780))
+        mainWindow?.center()
+
+        func shot(_ name: String) {
+            write(window: NSApp.keyWindow ?? mainWindow, to: dir.appendingPathComponent(name))
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            shot("01-main.png")
+
+            // Add-token sheet: the real editing surface, and the only secondary window whose
+            // chrome does not depend on a SwiftUI TabView.
+            NotificationCenter.default.post(name: .showAddToken, object: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                shot("02-editor.png")
+                if let sheet = NSApp.keyWindow, let parent = sheet.sheetParent {
+                    parent.endSheet(sheet)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.showLockScreen()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+                        self.write(window: self.lockWindow,
+                                   to: dir.appendingPathComponent("03-lock.png"))
+                        self.lockWindow?.orderOut(nil)
+                        self.auth.isLocked = false
+                        self.showAbout()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                            NSApp.keyWindow?.makeFirstResponder(nil)
+                            shot("04-about.png")
+                            self.showSettings()
+                            NotificationCenter.default.post(name: .showSettingsSyncTab, object: nil)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                                shot("05-settings.png")
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.terminate(nil) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func write(window: NSWindow?, to url: URL) {
+        guard let window, let view = window.contentView?.superview else { return }
+        view.layoutSubtreeIfNeeded()
+        let bounds = view.bounds
+        guard bounds.width > 0, let rep = view.bitmapImageRepForCachingDisplay(in: bounds) else { return }
+        view.cacheDisplay(in: bounds, to: rep)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return }
+        try? png.write(to: url)
+        print("[shot] \(url.lastPathComponent) \(rep.pixelsWide)x\(rep.pixelsHigh)")
+    }
+}
+
+// MARK: - Backup self-test (`--backup-selftest`)
+
+extension AppDelegate {
+    /// Exercises the real backup path (encrypt → write → read → decrypt) and prints the result.
+    /// Used to verify the feature on machines where no iCloud container is provisioned yet.
+    func runBackupSelfTestIfRequested() -> Bool {
+        guard CommandLine.arguments.contains("--backup-selftest") else { return false }
+        settings.iCloudBackupEnabled = true
+        seedStoreShotData()
+        ICloudBackupService.shared.refreshStatus(enabled: true)
+
+        let expected = store.allTokens.count
+        ICloudBackupService.shared.backup(tokens: store.allTokens, force: true)
+        let status = ICloudBackupService.shared.status.summary
+        let snapshots = ICloudBackupService.shared.snapshots()
+        let restored = snapshots.first?.tokens ?? []
+        let sameIDs = Set(restored.map(\.id)) == Set(store.allTokens.map(\.id))
+
+        print("SELFTEST status=\(status)")
+        print("SELFTEST written=\(expected) snapshots=\(snapshots.count) restored=\(restored.count) idsMatch=\(sameIDs)")
+        if let first = restored.first {
+            print("SELFTEST firstToken=\(first.name) valueReadable=\(!first.decryptedValue().isEmpty)")
+        }
+        exit(snapshots.isEmpty || !sameIDs ? 1 : 0)
     }
 }
 #endif

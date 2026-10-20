@@ -6,6 +6,7 @@ struct SettingsView: View {
     @EnvironmentObject private var vault: VaultStore
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var toast: ToastCenter
+    @ObservedObject private var icloudBackup = ICloudBackupService.shared
 
     @State private var showingImport = false
     @State private var showingTrash = false
@@ -201,6 +202,18 @@ struct SettingsView: View {
                     .font(Theme.caption)
                     .foregroundStyle(Theme.textTertiary)
             }
+
+            SettingsRow(symbol: "icloud", title: "iCloud 自動備份",
+                        detail: icloudBackup.status.summary) {
+                Toggle("", isOn: $settings.iCloudBackup)
+                    .labelsHidden()
+                    .tint(Theme.accent)
+                    .onChange(of: settings.iCloudBackup) { _, isOn in
+                        icloudBackup.refreshStatus(enabled: isOn)
+                        if isOn { icloudBackup.backup(tokens: vault.activeTokens, force: true) }
+                    }
+            }
+            .accessibilityIdentifier("settings.icloud")
         }
         .cardSurface(padding: Theme.Space.m)
     }

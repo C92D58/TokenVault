@@ -5,7 +5,7 @@
     <key>CFBundleExecutable</key>
     <string>TokenVault</string>
     <key>CFBundleIdentifier</key>
-    <string>org.wahsun.tokenvault</string>
+    <string>dev.wahsun.tokenvault</string>
     <key>CFBundleName</key>
     <string>TokenVault</string>
     <key>CFBundleDisplayName</key>

@@ -29,7 +29,18 @@
     <!-- Keychain sharing (only if shared between apps) -->
     <!-- No sharing needed for single app -->
 
-    <!-- iCloud (not using CloudKit, using file access instead) -->
-    <!-- com.apple.developer.icloud-services not needed -->
+    <!-- iCloud Documents: the ubiquity container the automatic encrypted backup writes into.
+         The container itself has to exist in the Apple Developer portal
+         (Identifiers → iCloud Containers → iCloud.dev.wahsun.tokenvault). -->
+    <key>com.apple.developer.icloud-container-identifiers</key>
+    <array>
+        <string>iCloud.dev.wahsun.tokenvault</string>
+    </array>
+    <key>com.apple.developer.icloud-services</key>
+    <array>
+        <string>CloudDocuments</string>
+    </array>
+    <key>com.apple.developer.ubiquity-kvstore-identifier</key>
+    <string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 </dict>
 </plist>

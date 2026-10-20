@@ -47,10 +47,22 @@ echo "🔏 Signing (Hardened Runtime)..."
 mkdir -p /tmp/tv_sign/$APP.app/Contents
 cp -R "$BUNDLE/Contents" /tmp/tv_sign/$APP.app/
 
+# An ad-hoc signature may not carry com.apple.developer.* entitlements — AMFI kills the process
+# at launch ("Killed: 9"). Keep the real file for App Store/notarized signing, sign the local
+# build with a copy that has the iCloud keys stripped, so iCloud reports itself unavailable
+# instead of taking the whole app down.
+LOCAL_ENTITLEMENTS=/tmp/tv_local.entitlements
+cp "$RES/TokenVault.entitlements" "$LOCAL_ENTITLEMENTS"
+for key in com.apple.developer.icloud-container-identifiers \
+           com.apple.developer.icloud-services \
+           com.apple.developer.ubiquity-kvstore-identifier; do
+  /usr/libexec/PlistBuddy -c "Delete :$key" "$LOCAL_ENTITLEMENTS" >/dev/null 2>&1 || true
+done
+
 # Sign with hardened runtime flags
 codesign --force --deep --sign - \
   --options runtime \
-  --entitlements "$RES/TokenVault.entitlements" \
+  --entitlements "$LOCAL_ENTITLEMENTS" \
   --timestamp \
   /tmp/tv_sign/$APP.app
 

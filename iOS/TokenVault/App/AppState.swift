@@ -58,6 +58,12 @@ final class AppState: ObservableObject {
         // 到期提醒預設開啟，但權限只有在設定頁被動打開過才會請求；不主動要一次，提醒永遠不會出現。
         if settings.expiryReminders && !options.isUITest { NotificationService.requestPermission() }
         refreshReminders()
+
+        // iCloud backup: report availability, then snapshot the vault once.
+        if settings.iCloudBackup && !options.isUITest {
+            ICloudBackupService.shared.refreshStatus(enabled: true)
+            ICloudBackupService.shared.backup(tokens: vault.activeTokens)
+        }
     }
 
     func scenePhaseChanged(_ phase: ScenePhase) {
@@ -66,6 +72,10 @@ final class AppState: ObservableObject {
             isShielded = true
             if leftForegroundAt == nil { leftForegroundAt = Date() }
             toast.dismiss()
+            // The system may kill a backgrounded app at any time: snapshot before that happens.
+            if case .background = phase, settings.iCloudBackup {
+                ICloudBackupService.shared.backup(tokens: vault.activeTokens, force: true)
+            }
         case .active:
             isShielded = false
             if let left = leftForegroundAt {

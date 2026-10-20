@@ -41,20 +41,49 @@ ls TokenVault.app/PrivacyInfo.xcprivacy                 # 必須存在
 
 ## 三、上架前還要做的
 
-### 1. 決定 Bundle ID（上架前唯一一次機會）
+### 0. 開通 iCloud 容器（新功能「iCloud 自動備份」必要）
 
-iOS `dev.` / macOS `org.` → App Store Connect 會是兩筆獨立 App，無法通用購買。
+兩端的 entitlements 都已寫入：
 
-- 要「一次購買、iPhone + Mac 都能用」→ 兩端同 bundle id（建議 `dev.wahsun.tokenvault`），macOS 專案必須先改名再提交。
-- 要兩個獨立 App → 現狀可用，但前綴不一致，看起來像兩個團隊。
+```
+com.apple.developer.icloud-container-identifiers = iCloud.dev.wahsun.tokenvault
+com.apple.developer.icloud-services             = CloudDocuments
+com.apple.developer.ubiquity-kvstore-identifier = $(TeamIdentifierPrefix)$(CFBundleIdentifier)
+```
 
-要改就是現在改：首次上架前沒有舊版升級成本。
+但容器本身必須在開發者後台存在：<https://developer.apple.com/account/resources/identifiers/list/cloudContainer>
+→ 新增 `iCloud.dev.wahsun.tokenvault` → 回到 App ID `dev.wahsun.tokenvault` 勾選 iCloud（CloudDocuments）→ 重新產生 provisioning profile。
 
-### 2. macOS 截圖（尚未做）
+沒做這步的後果：App 不會崩，設定頁會顯示「iCloud 無法使用：…」並禁用還原按鈕。
 
-需要 `1280×800`、`1440×900`、`2880×1800`（交 2880×1800 一組即可）。iOS 的 6 張 `1320×2868` 已完成，在 `~/Desktop/TokenVault-AppStore/`。
+> 本機 `build.sh` 會自動剝掉 `com.apple.developer.*` 再 ad-hoc 簽名，因為 ad-hoc 簽章帶這些 entitlement 會被 AMFI 直接 `Killed: 9`。真正上架的簽名請用 `publish.sh` / Xcode Archive（保留完整 entitlements）。
 
-建議畫面：主視窗（側欄＋Token 列表）、新增 Token、工具箱、設定、關於面板。
+### 1. 決定 Bundle ID（已定案）
+
+兩端統一 `dev.wahsun.tokenvault`（通用購買）。macOS 已改完並驗證。
+
+### 2. macOS 截圖（已完成）
+
+3 張 `2880×1800` 在 `~/Desktop/TokenVault-AppStore/macos/`：
+
+| 檔案 | 內容 |
+|---|---|
+| `01-main.png` | 主視窗（側欄 + 8 個 Token 卡片） |
+| `03-lock.png` | 鎖定畫面（Touch ID） |
+| `04-about.png` | 關於面板 |
+
+產法（可重跑）：
+
+```bash
+bash build.sh
+.build/TokenVault.app/Contents/MacOS/TokenVault --capture-shots /tmp/tv-macshots
+swift scripts/make-macos-store-shots.swift /tmp/tv-macshots ~/Desktop/TokenVault-AppStore/macos
+```
+
+擷取走 App 自己的 `--capture-shots` 模式（`cacheDisplay` 真實像素，含材質與陰影，不需要螢幕錄製權限），輸出目錄會被沙盒限制在容器內；再合成紫黑底＋標題的 2880×1800。
+
+限制：macOS 26 的 `TabView` 分頁標籤在離屏擷取時會渲染成白色膠囊，所以設定／說明這兩個 TabView 視窗目前不列入商店圖。iOS 的 6 張 `1320×2868` 已完成，在 `~/Desktop/TokenVault-AppStore/`。
+
 
 ### 3. App Store Connect 建檔
 

@@ -83,6 +83,9 @@ final class DataStore: ObservableObject {
     private func notify() {
         objectWillChange.send()
         save()
+        if SettingsService.shared.iCloudBackupEnabled {
+            ICloudBackupService.shared.scheduleBackup { [weak self] in self?.allTokens ?? [] }
+        }
     }
 
     // MARK: - Subscriptions (memory-leak-safe)

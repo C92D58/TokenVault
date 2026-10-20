@@ -51,8 +51,8 @@ struct AboutView: View {
                 feature(symbol: "faceid", title: "Face ID / Touch ID",
                         detail: "解鎖 App 才看得到內容")
                 hairline
-                feature(symbol: "icloud.fill", title: "iCloud Drive 同步",
-                        detail: "只同步密文，金鑰不離開這台裝置")
+                feature(symbol: "internaldrive", title: "本機儲存",
+                        detail: "只留在這台 Mac，不上傳任何伺服器")
             }
             .padding(.top, 22)
             .padding(.horizontal, 26)
